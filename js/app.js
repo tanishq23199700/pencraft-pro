@@ -1100,7 +1100,6 @@ let _qbState = { raw: '', title: '', keywords: [] };
 
 window.generateQuickBlog = async () => {
   const topic    = document.getElementById('qb-topic').value.trim();
-  const titleIn  = document.getElementById('qb-title').value.trim();
   const kwStr    = document.getElementById('qb-keywords').value.trim();
   const tone     = document.getElementById('qb-tone').value;
   const minWords = document.getElementById('qb-wordcount').value || '1500';
@@ -1108,7 +1107,7 @@ window.generateQuickBlog = async () => {
   if (!topic) { alert('Please enter a blog topic first.'); return; }
 
   const keywords = kwStr ? kwStr.split(',').map(k => k.trim()).filter(Boolean) : [];
-  _qbState = { raw: '', title: titleIn || topic, keywords };
+  _qbState = { raw: '', title: topic, keywords };
 
   const btn = document.getElementById('btn-qb-generate');
   btn.disabled = true;
@@ -1126,22 +1125,20 @@ window.generateQuickBlog = async () => {
   document.getElementById('btn-qb-copy').style.display  = 'none';
   document.getElementById('btn-qb-save').style.display  = 'none';
 
-  // If no custom title, auto-generate one first
-  let finalTitle = titleIn;
-  if (!finalTitle) {
-    status.textContent = '🔍 Auto-generating title…';
-    let titleRaw = '';
-    try {
-      await aiGenerateWithFallback(
-        `Generate ONE compelling SEO blog title for the given topic. Output ONLY the title. No quotes, no numbering.`,
-        `Topic: ${topic}\nKeywords: ${keywords.join(', ') || 'none'}\nTone: ${tone}`,
-        c => { titleRaw += c; },
-        new AbortController().signal, 0.9
-      );
-      finalTitle = titleRaw.replace(/^["'\d.\-\*]+\s*/,'').trim().split('\n')[0] || topic;
-    } catch { finalTitle = topic; }
-    _qbState.title = finalTitle;
-  }
+  // Always generate a polished title from the topic
+  status.textContent = '🔍 Polishing SEO title…';
+  let finalTitle = '';
+  let titleRaw = '';
+  try {
+    await aiGenerateWithFallback(
+      `Generate ONE compelling SEO blog title for the given topic. Output ONLY the title. No quotes, no numbering.`,
+      `Topic: ${topic}\nKeywords: ${keywords.join(', ') || 'none'}\nTone: ${tone}`,
+      c => { titleRaw += c; },
+      new AbortController().signal, 0.9
+    );
+    finalTitle = titleRaw.replace(/^["'\d.\-\*]+\s*/,'').trim().split('\n')[0] || topic;
+  } catch { finalTitle = topic; }
+  _qbState.title = finalTitle;
 
   // Build the enhanced system prompt with word count target
   const sys = _buildBlogSystemPrompt(tone).replace(
