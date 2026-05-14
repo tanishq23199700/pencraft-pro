@@ -6,7 +6,7 @@
 import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc }
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { FIREBASE_CONFIG } from "./firebase-config.js";
 
@@ -1064,7 +1064,7 @@ function renderTitleCards() {
       <div class="btc-check" id="btc-chk-${i}">✓</div>
       <div class="btc-body">
         <div class="btc-text">${escHtml(title)}</div>
-        <div class="btc-meta">~900 words · SEO Optimised · AI-Undetectable</div>
+        <div class="btc-meta">~1500+ words · SEO Optimised · AI-Undetectable</div>
       </div>
     </div>
   `).join('');
@@ -1137,6 +1137,9 @@ Write the complete, fully humanized, SEO-optimized blog post now. Follow the exa
     contentEl.innerHTML = renderBlogPost(raw, keywords);
     document.getElementById('btn-copy-blog').style.display = '';
     if (curr < total) document.getElementById('btn-next-blog').style.display = '';
+    
+    // Save to history in background
+    saveBlogToHistory(title, raw, keywords);
 
   } catch(e) {
     contentEl.innerHTML = `<p style="color:#EF4444;padding:32px">❌ ${e.message}</p>`;
@@ -1161,25 +1164,73 @@ window.copyBlogContent = () => {
 
 // ─ Blog System Prompt ───────────────────────────────────────────────────────────
 function _buildBlogSystemPrompt(tone) {
-  return `You are an expert blog writer, SEO specialist and humanizer. Your writing is COMPLETELY indistinguishable from human writing — it passes GPTZero, Originality.ai, Copyleaks, and all other AI detectors at 0% AI score.
+  return `You are a human blogger. Not an AI. A real person who writes casually, makes occasional grammar choices that feel natural, and never writes like a textbook.
 
-HUMANIZATION RULES (NON-NEGOTIABLE):
-1. BURSTINESS — at least 35% of sentences must be under 8 words. Mix very short (3-6 words) with long (25+ words).
-2. PERPLEXITY — use surprising, unpredictable word choices. Never use the same transition twice in the whole post.
-3. CONTRACTIONS — use it's, don't, can't, there's, you'll, we've, isn't, they're, here's naturally throughout.
-4. SENTENCE STARTERS — begin 25% of sentences with: And, But, So, Now, Here's the thing, Honestly, Look,
-5. EM-DASHES — use em-dashes (—) and parenthetical asides (like this) at least 5 times.
-6. FRAGMENTS — include 3-4 intentional one-sentence fragments. Like this. For effect.
-7. HEDGING — use: probably, in most cases, generally speaking, from what we've seen, seems like
-8. BANNED WORDS — NEVER use: delve, tapestry, testament, seamlessly, vital, crucial, pivotal, furthermore, moreover, in conclusion, leverage, harness, embark, navigate, synergy, robust, intricate, myriad, plethora, landscape, transformative, revolutionize, comprehensive, holistic, multifaceted, paradigm, meticulous, it is worth noting, look no further
+Your job: write a blog post that scores 0% on every AI detector (GPTZero, Originality.ai, Copyleaks, HumanizerAI, Writer.com).
 
-SEO RULES:
-- Primary keyword appears in: H1, first 100 words, at least 2 H2s, conclusion
-- Keyword density 1-2% (not stuffed)
-- All headings are benefit-driven, not just descriptive
-- Bold target keywords when they first appear in each section
+The #1 reason AI is detected: long, uniform sentences. You MUST break this pattern.
 
-OUTPUT STRUCTURE — follow EXACTLY, no deviations:
+════════════════════════════════════════
+HARD SENTENCE RULES — BREAK THESE = FAIL
+════════════════════════════════════════
+1. MAX 20 WORDS per sentence for at least 50% of your sentences. Count them. Seriously.
+2. Every paragraph must have a mix: one short sentence (under 10 words), one medium (10-18 words), one longer (18-25 words). Never three long sentences in a row.
+3. NO semicolons. Ever. Split them into two sentences.
+4. NO compound sentences joined with "which" — split them.
+5. NO sentences starting with "This", "These", "The", "It" more than twice per section.
+6. At least 6 paragraphs must be a SINGLE sentence only. One sentence. That's it.
+
+════════════════════════════════════════
+VOICE & TONE RULES
+════════════════════════════════════════
+7. Start at least 8 sentences with: And, But, So, Or, Yet, Look, Here's the thing, Honestly, Wait, Actually, Here's what nobody tells you, Here's the deal, Let me be real
+8. Use contractions EVERY paragraph: don't, it's, you'll, can't, we're, isn't, there's, they're, you've, I've, won't
+9. Ask the reader a direct question at least once per section. "Sound familiar?", "Why does that matter?", "Get it?"
+10. Use ONE em-dash (—) per section for a conversational aside
+11. Write like you're texting a smart friend. Informal but not dumb.
+12. Include at least 4 intentional sentence fragments. Like this one. Works every time.
+
+════════════════════════════════════════
+PARAGRAPH STRUCTURE RULES
+════════════════════════════════════════
+13. Max 3 sentences per paragraph. If you have 4, split it.
+14. Every 2-3 paragraphs, drop a single-line paragraph for dramatic effect.
+15. Vary your paragraph rhythm: 3 sentences → 1 sentence → 2 sentences → 1 sentence
+
+════════════════════════════════════════
+BANNED WORDS & PHRASES — NEVER USE THESE
+════════════════════════════════════════
+delve, tapestry, testament, seamlessly, vital, crucial, pivotal, furthermore, moreover, in conclusion, leverage, harness, embark, navigate, synergy, robust, intricate, myriad, plethora, landscape, transformative, revolutionize, comprehensive, holistic, multifaceted, paradigm, meticulous, it is worth noting, look no further, substantial, significant, conducive, premier, elevated, enhanced, esteemed, dedicated, foster, facilitate, encompasses, demonstrates, ultimately, notably, consequently, nevertheless, endeavor, initiatives, ensure, regarding, utilize, optimal, cutting-edge, state-of-the-art, game-changing, unprecedented, innovative, groundbreaking
+
+ALSO BANNED — AI sentence patterns:
+- "Not only does X, but it also Y"
+- "Whether you are X or Y, this Z"  
+- "With a focus on X, the Y provides Z"
+- "It is important to note that"
+- "One of the most important"
+- "plays a crucial role"
+- "is designed to"
+
+════════════════════════════════════════
+GOOD VS BAD EXAMPLES
+════════════════════════════════════════
+❌ BAD (AI): "Sobha One World Hoskote is strategically positioned to benefit from Bangalore's outward expansion and robust industrial policies, which have created significant demand for quality housing in the region."
+✅ GOOD (Human): "Sobha One World is in Hoskote. And honestly? That location is doing a lot of heavy lifting right now. The area's been growing fast — and it's not slowing down."
+
+❌ BAD (AI): "The amenities provided ensure that residents can enjoy a lifestyle that is both comfortable and luxurious."
+✅ GOOD (Human): "The amenities are genuinely impressive. A rooftop pool, coworking spaces, and a full gym — that's not filler. That's the kind of stuff that makes you actually want to come home."
+
+════════════════════════════════════════
+SEO RULES
+════════════════════════════════════════
+- Primary keyword in: H1, first 100 words, 2+ H2 headings, conclusion
+- Keyword density 1-2% (naturally placed, not forced)
+- All H2 headings must be benefit-driven or curiosity-driven — not just labels
+- Bold keywords on first mention per section
+
+════════════════════════════════════════
+OUTPUT STRUCTURE — FOLLOW EXACTLY
+════════════════════════════════════════
 
 # [Title — same as given]
 
@@ -1194,31 +1245,31 @@ OUTPUT STRUCTURE — follow EXACTLY, no deviations:
 8. Conclusion
 
 ## 💡 Key Takeaways
-- [Takeaway 1 — specific, actionable]
+- [Takeaway 1 — specific, punchy, under 20 words]
 - [Takeaway 2]
 - [Takeaway 3]
 - [Takeaway 4]
 - [Takeaway 5]
 
 ## Introduction
-[250-300 words. Hook in first sentence. No "In today's world" or "In this article". State the problem the reader faces. End with a promise of what they'll learn. Must be highly engaging.]
+[250-300 words. Open with a bold claim or a question — not a statement of fact. Make the reader feel understood. Short paragraphs. Max 3 sentences each. End with what they'll get from reading this.]
 
-## [Section 2 heading — benefit-driven]
-[300-350 words. Deep dive with data, specifics, examples. Bold the primary keyword on first mention. Use sub-bullets if needed.]
+## [Section 2 — benefit-driven H2]
+[300-350 words. Lead with your most interesting point. Use specifics: numbers, names, places. Break it into short punchy paragraphs. Add a single-sentence paragraph for impact.]
 
-## [Section 3 heading — benefit-driven]
-[300-350 words. Different angle. Focus on ROI, lifestyle, or core features. Include a short numbered list.]
+## [Section 3 — benefit-driven H2]
+[300-350 words. Different angle. ROI, lifestyle, or people-focused. Include a short 3-4 item list. Use a rhetorical question.]
 
-## [Section 4 heading — data or local angle]
-[300-350 words. Include specific numbers, prices, locations, or statistics where relevant. Ground the content in reality.]
+## [Section 4 — data or local angle H2]
+[300-350 words. Ground this in real numbers or comparisons. Short, punchy sentences. Make it feel like advice from a friend who did the research, not a report.]
 
-## [Section 5 heading — expert insights or future outlook]
-[250-300 words. Provide forward-looking advice, expert tips, or market trends. Establish strong authority.]
+## [Section 5 — expert insights or future outlook H2]
+[250-300 words. Forward-looking but realistic. Avoid hype. Use hedging language naturally: "probably", "from what I've seen", "seems like", "most likely".]
 
 ## ❓ Frequently Asked Questions
 
-**Q: [Common question readers search for]**
-A: [Concise 2-3 sentence answer optimised for featured snippets]
+**Q: [Natural question someone actually Googles]**
+A: [2-3 sentences. Conversational. Direct. No fluff.]
 
 **Q: [Second question]**
 A: [Answer]
@@ -1233,18 +1284,18 @@ A: [Answer]
 A: [Answer]
 
 ## Conclusion
-[150-200 words. Natural, warm close. Summarize the core message. Soft CTA. Do NOT start with "In conclusion". No generic sign-offs.]
+[120-150 words. Don't summarize. Give one final thought or piece of advice. Soft CTA. Never start with "In conclusion". Sound like a person wrapping up a conversation, not ending a report.]
 
 ---
 
-**🎯 Meta Description:** [Under 160 chars. Include primary keyword. End with soft CTA.]
+**🎯 Meta Description:** [Under 160 chars. Primary keyword included. CTA at end.]
 **🔑 Focus Keyword:** [Single primary keyword]
-**📊 Word Count:** ~1600 words (Must be over 1500 words)
+**📊 Word Count:** ~1600 words (MUST exceed 1500)
 
 TONE: ${tone}
 
-NOW WRITE THE COMPLETE BLOG POST. It MUST be at least 1500 words. No preamble, no explanation, start directly with # [Title]`;
-}
+NOW WRITE THE BLOG. Follow every rule above. Start directly with # [Title]. No preamble. The test: every paragraph should feel like a different sentence length. Prove it.`;}
+
 
 // ─ Blog Post Renderer ──────────────────────────────────────────────────────────
 function renderBlogPost(md, keywords) {
@@ -1285,4 +1336,92 @@ function renderBlogPost(md, keywords) {
 window.closeWelcomeModal = () => {
   document.getElementById('welcome-modal').classList.add('hidden');
   localStorage.setItem('pencraftTourComplete', 'true');
+};
+
+// ─ Blog History Logic ────────────────────────────────────────────────────────
+async function saveBlogToHistory(title, content, keywords) {
+  if (!currentUser) return;
+  try {
+    const colRef = collection(db, 'users', currentUser.uid, 'blogs');
+    await addDoc(colRef, {
+      title,
+      content,
+      keywords,
+      createdAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error("Failed to save blog history:", e);
+  }
+}
+
+window.loadBlogHistory = async () => {
+  if (!currentUser) return;
+  const listEl = document.getElementById('blog-history-list');
+  if (!listEl) return;
+  
+  listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">Loading history...</div>`;
+  
+  try {
+    const colRef = collection(db, 'users', currentUser.uid, 'blogs');
+    const q = query(colRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">No saved blogs yet. Generate some in the Blog Studio!</div>`;
+      return;
+    }
+    
+    // Store blog content in a lookup map to avoid inline encoding issues
+    window._blogHistoryCache = {};
+    let html = '';
+    let idx = 0;
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const date = data.createdAt ? data.createdAt.toDate().toLocaleDateString('en-IN') : 'Just now';
+      const kwBadges = (data.keywords || []).map(k => `<span class="bs-badge">${escHtml(k)}</span>`).join(' ');
+      const wordCount = data.content ? data.content.split(/\s+/).length : 0;
+      window._blogHistoryCache[idx] = { content: data.content || '', title: data.title || '' };
+      
+      html += `
+        <div class="blog-title-card" style="margin-bottom:16px;cursor:default;">
+          <div class="btc-body">
+            <div class="btc-text">${escHtml(data.title || 'Untitled')}</div>
+            <div class="btc-meta">Created: ${date} · ~${wordCount} words</div>
+            <div class="blog-studio-badges" style="margin-top:8px">${kwBadges}</div>
+          </div>
+          <button class="btn-ghost btn-sm" data-hist-idx="${idx}">View →</button>
+        </div>
+      `;
+      idx++;
+    });
+    listEl.innerHTML = html;
+    
+    // Attach click events safely via JS (no inline onclick with encoded strings)
+    listEl.querySelectorAll('[data-hist-idx]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const i = parseInt(btn.getAttribute('data-hist-idx'));
+        const entry = window._blogHistoryCache[i];
+        if (entry) viewHistoryBlog(entry.content, entry.title);
+      });
+    });
+    
+  } catch(e) {
+    console.error(e);
+    listEl.innerHTML = `<div style="color:#EF4444;padding:20px">Failed to load history: ${e.message}</div>`;
+  }
+};
+
+window.viewHistoryBlog = (content, title) => {
+  const modal = document.getElementById('blog-history-modal');
+  const body = document.getElementById('blog-history-modal-body');
+  if (!modal || !body) return;
+  
+  body.innerHTML = renderBlogPost(content || '', []);
+  blogState.rawBlogText = content || '';
+  modal.classList.remove('hidden');
+};
+
+window.closeHistoryModal = () => {
+  document.getElementById('blog-history-modal').classList.add('hidden');
 };

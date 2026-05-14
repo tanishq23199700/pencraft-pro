@@ -212,6 +212,7 @@
           <button class="wp-tab" onclick="setWPTool('neighborhood')">🏡 Neighborhood Guide</button>
           <div class="wp-sidebar-divider"></div>
           <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">✍ Blog Studio <span class="tab-badge">NEW</span></button>
+          <button class="wp-tab" onclick="setWPTool('history'); loadBlogHistory();">📚 Saved Blogs</button>
         </div>
 
         <div class="wp-main">
@@ -359,6 +360,20 @@
             </div>
 
           </div><!-- /blog-studio-tool -->
+
+          <!-- History Tool -->
+          <div id="wp-tool-history" class="wp-tool-panel hidden" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+            <div class="blog-phase-hdr" style="padding: 24px; margin: 0; flex-shrink: 0;">
+              <div>
+                <h3>📚 Saved Blogs</h3>
+                <p class="muted">View and copy blogs you've previously generated.</p>
+              </div>
+              <button class="btn-ghost" onclick="loadBlogHistory()">🔄 Refresh</button>
+            </div>
+            <div id="blog-history-list" class="blog-titles-list" style="padding: 0 24px 24px;">
+              <!-- History cards injected here -->
+            </div>
+          </div>
 
           <div class="wp-output-area" id="wp-output-area">
             <div class="editor-header">
@@ -525,9 +540,24 @@
     </div>
 
   </main>
-</div><!-- /dash -->
+</div>
 
-<!-- Firebase + App Logic -->
+<!-- Blog History View Modal -->
+<div id="blog-history-modal" class="modal hidden">
+  <div class="modal-box" style="max-width:900px; height:85vh; display:flex; flex-direction:column; padding:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:24px; border-bottom:1px solid var(--border);">
+      <h2>📝 Saved Blog Post</h2>
+      <div style="display:flex; gap:12px;">
+        <button class="btn-primary" id="btn-copy-blog-hist" onclick="copyBlogContent()">📋 Copy Clean Text</button>
+        <button class="btn-ghost" onclick="closeHistoryModal()">Close</button>
+      </div>
+    </div>
+    <div id="blog-history-modal-body" class="blog-output-content" style="border:none; border-radius:0;">
+      <!-- Blog content rendered here -->
+    </div>
+  </div>
+</div>
+
 <script type="module" src="js/app.js"></script>
 
 <!-- Boot splash sequence -->
