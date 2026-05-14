@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — PenCraft Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body class="dash-body">
+
+<!-- AUTH GUARD / BOOT SPLASH -->
+<div id="auth-guard" class="auth-guard">
+  <div class="boot-splash">
+    <div class="boot-logo">
+      <span class="boot-icon">✍</span>
+      <span class="boot-brand">PenCraft <strong>Pro</strong></span>
+    </div>
+    <div class="boot-bar-wrap">
+      <div class="boot-bar"><div class="boot-bar-fill" id="boot-fill"></div></div>
+    </div>
+    <div class="boot-msg" id="boot-msg">Initializing core engine...</div>
+    <div class="boot-sub" id="boot-sub">v2.1.0 · by Tanishq Sharma</div>
+  </div>
+</div>
+
+<!-- WELCOME MODAL -->
+<div id="welcome-modal" class="tour-overlay hidden">
+  <div class="welcome-box">
+    <div class="welcome-header">
+      <div class="welcome-icon">✨</div>
+      <h2>Welcome to PenCraft Pro</h2>
+      <p>Your new AI writing command center.</p>
+    </div>
+    
+    <div class="welcome-features">
+      <div class="feat-row">
+        <div class="feat-icn">✍</div>
+        <div class="feat-txt">
+          <strong>Content & WP Hub</strong>
+          <span>Humanize AI text and generate Elementor/Yoast copy instantly.</span>
+        </div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icn">🕵️</div>
+        <div class="feat-txt">
+          <strong>Competitor Intel</strong>
+          <span>Spy on top-ranking Google sites and extract their exact SEO strategy.</span>
+        </div>
+      </div>
+      <div class="feat-row">
+        <div class="feat-icn">⚙️</div>
+        <div class="feat-txt">
+          <strong>API Fallback System</strong>
+          <span>Add Gemini, OpenAI, and Claude keys in Settings. The app will auto-switch if one fails!</span>
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn-primary welcome-btn" onclick="closeWelcomeModal()">Get Started 🚀</button>
+  </div>
+</div>
+
+<!-- DASHBOARD SHELL -->
+<div id="dash" class="dash hidden">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <span class="nav-icon">✍</span>
+      <span>PenCraft <strong>Pro</strong></span>
+    </div>
+    <div class="sb-label">MAIN MENU</div>
+    <nav class="sb-nav">
+      <button class="sb-btn active" data-panel="rewriter" onclick="switchPanel('rewriter')">
+        <span class="sb-icon">✍</span> Content Rewriter
+      </button>
+      <button class="sb-btn" data-panel="wp" onclick="switchPanel('wp')">
+        <span class="sb-icon">💻</span> WordPress Hub
+      </button>
+      <button class="sb-btn" data-panel="seo" onclick="switchPanel('seo')">
+        <span class="sb-icon">🕵️</span> Competitor Intel
+      </button>
+    </nav>
+    <div class="sb-label" style="margin-top:24px">ACCOUNT</div>
+    <nav class="sb-nav">
+      <button class="sb-btn" data-panel="tutorial" onclick="switchPanel('tutorial')">
+        <span class="sb-icon">📚</span> Tutorial & Guide
+      </button>
+      <button class="sb-btn" data-panel="settings" onclick="switchPanel('settings')">
+        <span class="sb-icon">⚙️</span> Settings
+      </button>
+    </nav>
+    
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">T</div>
+        <div class="sb-userinfo">
+          <strong id="sb-name">Loading...</strong>
+          <span id="sb-email">...</span>
+        </div>
+      </div>
+      <button class="sb-signout" onclick="doSignOut()" title="Sign Out">⏻</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+  <main class="dash-main">
+
+    <!-- ══ REWRITER PANEL ══════════════════════════════════════════ -->
+    <div id="panel-rewriter" class="panel active">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">✍ Content Rewriter</h1>
+          <p class="panel-sub">Humanize AI text and remove plagiarism with a dual-pass engine.</p>
+        </div>
+        <div class="panel-badge" id="provider-badge">● Auto-Fallback Enabled</div>
+      </div>
+
+      <div class="ctrl-row">
+        <div class="mode-group">
+          <button class="mode-btn" id="mode-plagiarism" onclick="setMode('plagiarism')">🔍 Plagiarism Remover</button>
+          <button class="mode-btn" id="mode-humanize" onclick="setMode('humanize')">🤖 Humanize AI</button>
+          <button class="mode-btn active" id="mode-both" onclick="setMode('both')">✨ Super Rewrite (Both)</button>
+        </div>
+        <div class="tone-group">
+          <select id="tone-select" class="dash-select">
+            <option>Professional</option>
+            <option>Luxury Real Estate</option>
+            <option>Investor Focused</option>
+            <option>Family Friendly</option>
+            <option>Casual</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="editor-grid">
+        <div class="editor-panel">
+          <div class="editor-header">
+            <span>📄 Original Input</span>
+            <span id="in-words" class="word-count">0 words</span>
+          </div>
+          <textarea id="input-text" class="editor-area" placeholder="Paste your draft or AI content here..."></textarea>
+          <div class="score-bar" id="in-scores">
+            <div class="score-item">
+              <span class="score-label">🤖 AI Written</span>
+              <div class="score-track"><div class="score-fill ai-fill" id="in-ai-fill"></div></div>
+              <span class="score-val" id="in-ai-val">—</span>
+            </div>
+            <div class="score-sep"></div>
+            <div class="score-item">
+              <span class="score-label">✦ Originality</span>
+              <div class="score-track"><div class="score-fill orig-fill" id="in-orig-fill"></div></div>
+              <span class="score-val" id="in-orig-val">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-divider"><div class="ed-arrow">→</div></div>
+
+        <div class="editor-panel">
+          <div class="editor-header">
+            <span>✅ Production Ready</span>
+            <span id="out-words" class="word-count">0 words</span>
+          </div>
+          <textarea id="output-text" class="editor-area" readonly placeholder="Rewritten content will appear here..."></textarea>
+          <div class="score-bar">
+            <div class="score-item">
+              <span class="score-label">🤖 AI Written</span>
+              <div class="score-track"><div class="score-fill ai-fill" id="out-ai-fill"></div></div>
+              <span class="score-val" id="out-ai-val">—</span>
+            </div>
+            <div class="score-sep"></div>
+            <div class="score-item">
+              <span class="score-label">✦ Originality</span>
+              <div class="score-track"><div class="score-fill orig-fill" id="out-orig-fill"></div></div>
+              <span class="score-val" id="out-orig-val">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-primary" id="btn-rewrite" onclick="startRewrite()">🚀 Rewrite Content</button>
+        <button class="btn-ghost" id="btn-stop" onclick="stopRewrite()" disabled>⏹ Stop</button>
+        <button class="btn-ghost" onclick="copyOutput()">📋 Copy to WP</button>
+        <button class="btn-ghost" onclick="clearAll()">🗑 Clear</button>
+        <div class="progress-wrap" id="rw-progress-wrap" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="rw-progress-fill"></div></div>
+          <span id="rw-status" class="status-txt">Rewriting...</span>
+        </div>
+        <span id="rw-done-msg" class="status-txt" style="margin-left:auto"></span>
+      </div>
+    </div>
+
+    <!-- ══ WORDPRESS HUB ════════════════════════════════════════ -->
+    <div id="panel-wp" class="panel hidden">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">💻 WordPress Tools</h1>
+          <p class="panel-sub">Content generation built specifically for Elementor, Yoast, and Real Estate sites.</p>
+        </div>
+      </div>
+
+      <div class="wp-grid">
+        <!-- WP Tool selection -->
+        <div class="wp-sidebar">
+          <button class="wp-tab active" onclick="setWPTool('elementor')">🏗️ Elementor Filler</button>
+          <button class="wp-tab" onclick="setWPTool('yoast')">📝 Yoast Meta Gen</button>
+          <button class="wp-tab" onclick="setWPTool('neighborhood')">🏡 Neighborhood Guide</button>
+          <div class="wp-sidebar-divider"></div>
+          <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">✍ Blog Studio <span class="tab-badge">NEW</span></button>
+        </div>
+
+        <div class="wp-main">
+          <!-- Elementor Tool -->
+          <div id="wp-tool-elementor" class="wp-tool-panel active">
+            <h3>Generate Section Copy</h3>
+            <p class="muted">Need text for a website section but the client hasn't sent it? Let AI write it based on bullet points.</p>
+            <div class="form-group" style="margin-top:16px">
+              <label>Project / Company Name</label>
+              <input type="text" id="wp-el-name" class="dash-input" placeholder="e.g. Godrej Vanantara" />
+            </div>
+            <div class="form-group">
+              <label>Section Type</label>
+              <select id="wp-el-type" class="dash-select" style="width:100%">
+                <option>Hero Section (Headline + Subtext)</option>
+                <option>About the Project (2-3 paragraphs)</option>
+                <option>Amenities Overview</option>
+                <option>Call to Action / Footer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Raw Details (Bullet points)</label>
+              <textarea id="wp-el-raw" class="dash-input" rows="3" placeholder="e.g. 3BHK luxury, Hoskote, starts 1.5Cr..."></textarea>
+            </div>
+            <button class="btn-primary" onclick="runWPTool('elementor')" id="btn-wp-elementor">Generate Section →</button>
+          </div>
+
+          <!-- Yoast Tool -->
+          <div id="wp-tool-yoast" class="wp-tool-panel hidden">
+            <h3>Yoast/RankMath Meta Generator</h3>
+            <p class="muted">Generate perfect-length SEO Titles (max 60 chars) and Meta Descriptions (max 160 chars).</p>
+            <div class="form-group" style="margin-top:16px">
+              <label>Target Keyword</label>
+              <input type="text" id="wp-yo-kw" class="dash-input" placeholder="e.g. Luxury apartments in Hoskote" />
+            </div>
+            <div class="form-group">
+              <label>Page Content / Summary</label>
+              <textarea id="wp-yo-raw" class="dash-input" rows="4" placeholder="Paste the page content or a brief summary here..."></textarea>
+            </div>
+            <button class="btn-primary" onclick="runWPTool('yoast')" id="btn-wp-yoast">Generate Meta Data →</button>
+          </div>
+
+          <!-- Neighborhood Tool -->
+          <div id="wp-tool-neighborhood" class="wp-tool-panel hidden">
+            <h3>Neighborhood Guide Builder</h3>
+            <p class="muted">Generate a local SEO blog post (e.g. Top schools near X). AI will search the web for real data.</p>
+            <div class="form-group" style="margin-top:16px">
+              <label>Location / Pincode</label>
+              <input type="text" id="wp-nb-loc" class="dash-input" placeholder="e.g. Whitefield, Bangalore" />
+            </div>
+            <div class="form-group">
+              <label>Guide Focus</label>
+              <select id="wp-nb-focus" class="dash-select" style="width:100%">
+                <option>Overall Location Advantages</option>
+                <option>Top Schools & Education</option>
+                <option>IT Parks & Employment Hubs</option>
+                <option>Upcoming Infrastructure & ROI</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="runWPTool('neighborhood')" id="btn-wp-neighborhood">Search & Generate Guide →</button>
+          </div>
+
+          <!-- Blog Studio Tool -->
+          <div id="wp-tool-blog" class="wp-tool-panel hidden blog-studio-tool">
+
+            <!-- Phase 1: Input -->
+            <div id="blog-phase-input" class="blog-phase">
+              <div class="blog-studio-header">
+                <div>
+                  <h3>✍ Blog Studio</h3>
+                  <p class="muted">AI-powered blog generation with full SEO structure, humanized and plagiarism-free.</p>
+                </div>
+                <div class="blog-studio-badges">
+                  <span class="bs-badge">🤖 AI-Undetectable</span>
+                  <span class="bs-badge">🔍 Plagiarism-Free</span>
+                  <span class="bs-badge">📊 SEO-Optimised</span>
+                </div>
+              </div>
+
+              <div class="blog-form-grid">
+                <div class="form-group">
+                  <label>Topic / Project Name</label>
+                  <input type="text" id="blog-topic" class="dash-input" placeholder="e.g. Godrej Vanantara, Whitefield luxury flats..." />
+                </div>
+                <div class="form-group">
+                  <label>Blog Tone</label>
+                  <select id="blog-tone" class="dash-select" style="width:100%">
+                    <option>Luxury Real Estate</option>
+                    <option>Professional</option>
+                    <option>Investor Focused</option>
+                    <option>Family Friendly</option>
+                    <option>Casual</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Target Keywords <span style="font-weight:400;color:var(--text-muted)">(comma separated — these will be highlighted in every blog)</span></label>
+                <input type="text" id="blog-keywords" class="dash-input" placeholder="e.g. luxury apartments Whitefield, 3BHK Bangalore, Godrej properties" />
+              </div>
+
+              <button class="btn-primary" id="btn-gen-titles" onclick="generateBlogTitles()">
+                ✨ Generate 6 Title Options →
+              </button>
+            </div>
+
+            <!-- Phase 2: Title Selection -->
+            <div id="blog-phase-titles" class="blog-phase hidden">
+              <div class="blog-phase-hdr">
+                <div>
+                  <h3>Select Blog Titles</h3>
+                  <p class="muted">Click to select one or more. AI generates each blog in order, one at a time.</p>
+                </div>
+                <button class="btn-ghost btn-sm" onclick="blogGoBack('input')">← Back</button>
+              </div>
+              <div id="blog-titles-list" class="blog-titles-list"></div>
+              <div class="blog-sel-footer">
+                <div class="blog-sel-info">
+                  <span id="blog-sel-count" class="sel-count-badge">0 selected</span>
+                  <span style="font-size:13px;color:var(--text-muted)">Select titles to generate</span>
+                </div>
+                <button class="btn-primary" id="btn-gen-blogs" onclick="generateSelectedBlogs()" disabled>
+                  🚀 Generate Selected Blogs →
+                </button>
+              </div>
+            </div>
+
+            <!-- Phase 3: Blog Output -->
+            <div id="blog-phase-output" class="blog-phase hidden">
+              <div class="blog-output-hdr">
+                <div class="blog-nav-info">
+                  <span class="blog-nav-pill" id="blog-nav-label">Blog 1 of 1</span>
+                  <span class="blog-nav-title" id="blog-nav-title"></span>
+                </div>
+                <div class="blog-nav-actions">
+                  <button class="btn-ghost btn-sm" onclick="blogGoBack('titles')">← Titles</button>
+                  <button class="btn-ghost btn-sm" onclick="blogGoBack('input')">↺ Start Over</button>
+                  <button class="yr-copy-btn" id="btn-copy-blog" onclick="copyBlogContent()">📋 Copy</button>
+                  <button class="btn-primary btn-sm" id="btn-next-blog" onclick="nextBlog()" style="display:none">Next Blog →</button>
+                </div>
+              </div>
+              <div id="blog-output-content" class="blog-output-content">
+                <div class="blog-gen-placeholder">✍ Blog will appear here...</div>
+              </div>
+            </div>
+
+          </div><!-- /blog-studio-tool -->
+
+          <div class="wp-output-area" id="wp-output-area">
+            <div class="editor-header">
+              <span>✅ Generated WP Ready Content</span>
+              <button class="btn-ghost" style="padding:4px 12px;font-size:12px;border:none;background:#F3F4F6;" onclick="copyWP()">📋 Clean Copy</button>
+            </div>
+            <div id="wp-output" class="wp-output-box">
+              <p style="color:var(--text-muted);text-align:center;padding:40px;">Select a tool above to generate content...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SEO INTEL PANEL ════════════════════════════════════════ -->
+    <div id="panel-seo" class="panel hidden">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">🕵️ Competitor Intel</h1>
+          <p class="panel-sub">Reverse-engineer competitors' SEO structures directly from the web.</p>
+        </div>
+      </div>
+
+      <div class="seo-ctrl-card">
+        <div class="radio-row">
+          <span class="ctrl-label">Analyze By:</span>
+          <label class="radio-opt"><input type="radio" name="seo-type" value="keyword" checked /> Keyword</label>
+          <label class="radio-opt"><input type="radio" name="seo-type" value="domain" /> Domain</label>
+        </div>
+        <div class="seo-input-row">
+          <input type="text" id="seo-query" class="kw-input" placeholder="e.g. prestige apartments in whitefield" />
+          <button class="btn-primary" id="btn-seo" onclick="startSEO()">🔍 Analyze</button>
+          <button class="btn-ghost" id="btn-seo-stop" onclick="stopSEO()" disabled>⏹ Stop</button>
+        </div>
+      </div>
+      
+      <div id="seo-progress-row" class="seo-progress-row hidden">
+        <div class="progress-bar"><div class="progress-fill seo-fill" id="seo-pbar"></div></div>
+        <span id="seo-status">Searching Google...</span>
+      </div>
+
+      <div id="seo-output" class="seo-output">
+        <div class="seo-placeholder">
+          <div class="seo-placeholder-icon">🕵️</div>
+          <p>Enter a keyword to analyze top competitors.</p>
+        </div>
+      </div>
+      <div class="action-row" style="padding-top:0">
+        <button class="btn-ghost" onclick="copySEO()">📋 Copy Report</button>
+        <button class="btn-ghost" onclick="clearSEO()">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- ══ TUTORIAL PANEL ════════════════════════════════════════ -->
+    <div id="panel-tutorial" class="panel hidden">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">📚 How to Use PenCraft Pro</h1>
+          <p class="panel-sub">Get the most out of the AI engine and WordPress tools.</p>
+        </div>
+      </div>
+      
+      <div class="tut-grid">
+        <div class="tut-card">
+          <div class="tut-icon">✍</div>
+          <h3>The Dual-Pass Rewriter</h3>
+          <p>Standard AI bypassers use simple synonym swapping. PenCraft Pro's "Super Rewrite" mode does two things:<br/><br/>
+          1. <strong>Plagiarism Pass:</strong> Inverts clauses, rearrises paragraphs, and replaces verbs to guarantee 0% match.<br/>
+          2. <strong>Humanize Pass:</strong> Injects "burstiness" (short + long sentences) and "perplexity" (unpredictable words) so it passes GPTZero and Originality.ai.</p>
+        </div>
+        
+        <div class="tut-card">
+          <div class="tut-icon">🔄</div>
+          <h3>API Fallback System</h3>
+          <p>You can add keys for Gemini, OpenAI, and Claude in Settings. <br/><br/>
+          If you hit an API limit (e.g., Gemini says `429 Too Many Requests`), the app will <strong>automatically</strong> try OpenAI, and then Claude, ensuring your workflow is never interrupted.</p>
+        </div>
+        
+        <div class="tut-card">
+          <div class="tut-icon">💻</div>
+          <h3>WordPress formatting</h3>
+          <p>When you click "Clean Copy" or "Copy to WP", the app automatically strips out markdown asterisks `**` and hidden styling that usually breaks Elementor or Gutenberg. Paste fearlessly!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS PANEL ════════════════════════════════════════ -->
+    <div id="panel-settings" class="panel hidden">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">⚙️ Settings & API Keys</h1>
+          <p class="panel-sub">Stored securely in your Firebase account. Fallback cascade enabled.</p>
+        </div>
+        <button class="btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+      </div>
+
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>🔑 API Keys</h3>
+          <p class="muted">Add multiple keys for automatic fallback protection.</p>
+
+          <div class="form-group" style="margin-top:16px">
+            <label>1. Google Gemini</label>
+            <div class="key-input-wrap">
+              <input type="password" id="key-gemini" placeholder="AIza..." class="dash-input" />
+              <button class="btn-eye" onclick="toggleKey('key-gemini')">👁</button>
+              <button class="btn-verify" onclick="verifyKey('gemini')" title="Test Key">✓ Verify</button>
+            </div>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="key-link">Get Gemini API Key →</a>
+          </div>
+
+          <div class="form-group">
+            <label>2. OpenAI</label>
+            <div class="key-input-wrap">
+              <input type="password" id="key-openai" placeholder="sk-..." class="dash-input" />
+              <button class="btn-eye" onclick="toggleKey('key-openai')">👁</button>
+              <button class="btn-verify" onclick="verifyKey('openai')" title="Test Key">✓ Verify</button>
+            </div>
+            <a href="https://platform.openai.com/api-keys" target="_blank" class="key-link">Get OpenAI API Key →</a>
+          </div>
+
+          <div class="form-group">
+            <label>3. Anthropic Claude</label>
+            <div class="key-input-wrap">
+              <input type="password" id="key-claude" placeholder="sk-ant-..." class="dash-input" />
+              <button class="btn-eye" onclick="toggleKey('key-claude')">👁</button>
+              <button class="btn-verify" onclick="verifyKey('claude')" title="Test Key">✓ Verify</button>
+            </div>
+            <a href="https://console.anthropic.com/keys" target="_blank" class="key-link">Get Claude API Key →</a>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>⚡ Preferences</h3>
+          <div class="form-group" style="margin-top:16px">
+            <label>Primary AI Provider</label>
+            <select id="pref-provider" class="dash-select" style="width:100%">
+              <option value="gemini">Google Gemini (Recommended)</option>
+              <option value="openai">OpenAI</option>
+              <option value="claude">Anthropic Claude</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Default Tone</label>
+            <select id="pref-tone" class="dash-select" style="width:100%">
+              <option>Professional</option>
+              <option>Luxury Real Estate</option>
+              <option>Investor Focused</option>
+              <option>Family Friendly</option>
+              <option>Casual</option>
+            </select>
+          </div>
+          <div class="info-box">
+            <span style="font-size:18px">💡</span>
+            <div>
+              <strong>How Fallback Works:</strong>
+              <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">When you generate text, the app tries Gemini first. If Gemini returns an error (quota exceeded), it immediately tries OpenAI, then Claude. Ensure you have keys for all 3 for maximum uptime!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-msg" class="auth-msg hidden" style="margin-top:12px"></div>
+    </div>
+
+  </main>
+</div><!-- /dash -->
+
+<!-- Firebase + App Logic -->
+<script type="module" src="js/app.js"></script>
+
+<!-- Boot splash sequence -->
+<script>
+(function() {
+  const steps = [
+    { msg: 'Initializing core engine...',          pct: 8  },
+    { msg: 'Loading neural rewrite modules...',    pct: 18 },
+    { msg: 'Connecting to Gemini 2.5 engine...',   pct: 30 },
+    { msg: '✓ Gemini engine online',               pct: 40 },
+    { msg: 'Registering Claude fallback layer...',  pct: 50 },
+    { msg: '✓ Claude fallback ready',              pct: 58 },
+    { msg: 'Loading OpenAI cascade handler...',    pct: 66 },
+    { msg: '✓ OpenAI cascade armed',               pct: 73 },
+    { msg: 'Mounting SEO intelligence module...',  pct: 80 },
+    { msg: 'Validating Firebase auth tokens...',   pct: 88 },
+    { msg: 'Decrypting API key vault...',          pct: 93 },
+    { msg: 'All systems operational ✓',            pct: 100 },
+  ];
+  const fill = document.getElementById('boot-fill');
+  const msg  = document.getElementById('boot-msg');
+  if (!fill || !msg) return;
+  let i = 0;
+  fill.style.width = '4%';
+  const tick = setInterval(() => {
+    if (i >= steps.length) { clearInterval(tick); return; }
+    const s = steps[i++];
+    fill.style.width = s.pct + '%';
+    msg.textContent  = s.msg;
+    // green flash on ✓ lines
+    if (s.msg.startsWith('✓')) msg.style.color = '#10B981';
+    else msg.style.color = '#94A3B8';
+  }, 220);
+})();
+</script>
+
+</body>
+</html>

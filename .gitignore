@@ -1,0 +1,14 @@
+# Ignore Python files if accidentally copied
+*.py
+*.pyc
+__pycache__/
+
+# Node/IDE files
+node_modules/
+.vscode/
+.idea/
+
+# Ignore env files (just in case)
+.env
+.venv/
+venv/
