@@ -213,6 +213,7 @@
           <div class="wp-sidebar-divider"></div>
           <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">✍ Blog Studio <span class="tab-badge">NEW</span></button>
           <button class="wp-tab" onclick="setWPTool('history'); loadBlogHistory();">📚 Saved Blogs</button>
+          <button class="wp-tab" onclick="setWPTool('quickblog')" style="background:linear-gradient(135deg,#6C3FC5,#9B5DE5);color:#fff;font-weight:700;">⚡ Quick Generate</button>
         </div>
 
         <div class="wp-main">
@@ -372,6 +373,76 @@
             </div>
             <div id="blog-history-list" class="blog-titles-list" style="padding: 0 24px 24px;">
               <!-- History cards injected here -->
+            </div>
+          </div>
+
+          <!-- Quick Blog Generator -->
+          <div id="wp-tool-quickblog" class="wp-tool-panel hidden blog-studio-tool" style="overflow-y:auto;">
+            <div class="blog-studio-header" style="padding:24px 24px 0;">
+              <div>
+                <h3>⚡ Quick Blog Generator</h3>
+                <p class="muted">Enter your topic and keywords — get a fully humanized, SEO-optimized 1500+ word blog instantly. No title selection needed.</p>
+              </div>
+              <div class="blog-studio-badges">
+                <span class="bs-badge">🤖 AI-Undetectable</span>
+                <span class="bs-badge">🔍 SEO-Optimised</span>
+              </div>
+            </div>
+
+            <div style="padding:24px;">
+              <div class="blog-form-grid">
+                <div class="form-group">
+                  <label>Blog Topic / Project Name <span style="color:#EF4444">*</span></label>
+                  <input type="text" id="qb-topic" class="dash-input" placeholder="e.g. Why Sobha One World Hoskote is the Best Investment in 2025" />
+                </div>
+                <div class="form-group">
+                  <label>Custom Title <span style="color:var(--text-muted);font-weight:400">(optional — leave blank to auto-generate)</span></label>
+                  <input type="text" id="qb-title" class="dash-input" placeholder="e.g. Top 7 Reasons to Invest in Sobha One World Hoskote" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Focused Keywords <span style="color:var(--text-muted);font-weight:400">(comma separated)</span></label>
+                <input type="text" id="qb-keywords" class="dash-input" placeholder="e.g. Sobha One World, Hoskote apartments, luxury flats Bangalore" />
+              </div>
+
+              <div class="blog-form-grid">
+                <div class="form-group">
+                  <label>Blog Tone</label>
+                  <select id="qb-tone" class="dash-select" style="width:100%">
+                    <option>Luxury Real Estate</option>
+                    <option>Professional</option>
+                    <option>Investor Focused</option>
+                    <option>Family Friendly</option>
+                    <option>Casual &amp; Conversational</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Minimum Word Count</label>
+                  <select id="qb-wordcount" class="dash-select" style="width:100%">
+                    <option value="1500">1500+ words (Standard)</option>
+                    <option value="2000">2000+ words (Deep Dive)</option>
+                    <option value="2500">2500+ words (Pillar Page)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="generateQuickBlog()" id="btn-qb-generate">
+                ⚡ Generate Blog Now →
+              </button>
+            </div>
+
+            <!-- Output area -->
+            <div id="qb-output-wrap" style="padding:0 24px 24px; display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <div id="qb-status" style="font-size:13px;color:var(--text-muted);">Generating...</div>
+                <div style="display:flex;gap:10px;">
+                  <button class="yr-copy-btn" id="btn-qb-copy" onclick="copyQuickBlog()" style="display:none;">📋 Copy</button>
+                  <button class="btn-ghost btn-sm" id="btn-qb-save" onclick="saveQuickBlog()" style="display:none;">💾 Save to History</button>
+                </div>
+              </div>
+              <div id="qb-gen-stream" style="font-family:monospace;font-size:12px;color:var(--text-muted);background:#F8F9FA;padding:16px;border-radius:10px;max-height:120px;overflow:hidden;margin-bottom:12px;"></div>
+              <div id="qb-output-content" class="blog-output-content" style="min-height:200px;"></div>
             </div>
           </div>
 

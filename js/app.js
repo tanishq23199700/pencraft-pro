@@ -1093,6 +1093,115 @@ window.closeWelcomeModal = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
+//  QUICK BLOG GENERATOR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _qbState = { raw: '', title: '', keywords: [] };
+
+window.generateQuickBlog = async () => {
+  const topic    = document.getElementById('qb-topic').value.trim();
+  const titleIn  = document.getElementById('qb-title').value.trim();
+  const kwStr    = document.getElementById('qb-keywords').value.trim();
+  const tone     = document.getElementById('qb-tone').value;
+  const minWords = document.getElementById('qb-wordcount').value || '1500';
+
+  if (!topic) { alert('Please enter a blog topic first.'); return; }
+
+  const keywords = kwStr ? kwStr.split(',').map(k => k.trim()).filter(Boolean) : [];
+  _qbState = { raw: '', title: titleIn || topic, keywords };
+
+  const btn = document.getElementById('btn-qb-generate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  const wrap   = document.getElementById('qb-output-wrap');
+  const stream = document.getElementById('qb-gen-stream');
+  const output = document.getElementById('qb-output-content');
+  const status = document.getElementById('qb-status');
+
+  wrap.style.display = 'block';
+  stream.textContent  = '';
+  output.innerHTML    = '';
+  status.textContent  = '✍ Initialising AI writer…';
+  document.getElementById('btn-qb-copy').style.display  = 'none';
+  document.getElementById('btn-qb-save').style.display  = 'none';
+
+  // If no custom title, auto-generate one first
+  let finalTitle = titleIn;
+  if (!finalTitle) {
+    status.textContent = '🔍 Auto-generating title…';
+    let titleRaw = '';
+    try {
+      await aiGenerateWithFallback(
+        `Generate ONE compelling SEO blog title for the given topic. Output ONLY the title. No quotes, no numbering.`,
+        `Topic: ${topic}\nKeywords: ${keywords.join(', ') || 'none'}\nTone: ${tone}`,
+        c => { titleRaw += c; },
+        new AbortController().signal, 0.9
+      );
+      finalTitle = titleRaw.replace(/^["'\d.\-\*]+\s*/,'').trim().split('\n')[0] || topic;
+    } catch { finalTitle = topic; }
+    _qbState.title = finalTitle;
+  }
+
+  // Build the enhanced system prompt with word count target
+  const sys = _buildBlogSystemPrompt(tone).replace(
+    '~1600 words (MUST exceed 1500)',
+    `~${parseInt(minWords) + 200} words (MUST exceed ${minWords} words)`
+  );
+  const usr = `Title: "${finalTitle}"
+Topic: ${topic}
+Keywords to bold where natural: ${keywords.join(', ') || 'none'}
+Tone: ${tone}
+Minimum word count: ${minWords} words
+
+Write the complete humanized, SEO-optimized blog post now. Follow your instructions exactly. Start directly with # [Title].`;
+
+  status.textContent = `✍ Writing "${finalTitle.slice(0,50)}…"`;
+  let firstChunk = true;
+
+  try {
+    await aiGenerateWithFallback(sys, usr, (chunk) => {
+      _qbState.raw += chunk;
+      if (firstChunk) { status.textContent = '✍ Writing blog…'; firstChunk = false; }
+      stream.textContent = _qbState.raw.slice(-500);
+      stream.scrollTop = stream.scrollHeight;
+    }, new AbortController().signal, 0.96);
+
+    stream.style.display = 'none';
+    output.innerHTML = renderBlogPost(_qbState.raw, keywords);
+    const wc = countWords(_qbState.raw);
+    status.textContent = `✅ Done! ~${wc} words generated`;
+    document.getElementById('btn-qb-copy').style.display = '';
+    document.getElementById('btn-qb-save').style.display = '';
+  } catch(e) {
+    output.innerHTML = `<p style="color:#EF4444;padding:24px">❌ ${e.message}</p>`;
+    status.textContent = 'Error generating blog.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Generate Blog Now →';
+  }
+};
+
+window.copyQuickBlog = () => {
+  if (!_qbState.raw) return;
+  const clean = _qbState.raw.replace(/\*\*/g,'').replace(/\*/g,'');
+  navigator.clipboard.writeText(clean);
+  const btn = document.getElementById('btn-qb-copy');
+  btn.textContent = '✅ Copied!';
+  setTimeout(() => btn.textContent = '📋 Copy', 2000);
+};
+
+window.saveQuickBlog = async () => {
+  if (!_qbState.raw) return;
+  const btn = document.getElementById('btn-qb-save');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
+  await saveBlogToHistory(_qbState.title, _qbState.raw, _qbState.keywords);
+  btn.textContent = '✅ Saved!';
+  setTimeout(() => { btn.textContent = '💾 Save to History'; btn.disabled = false; }, 2000);
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 //  BLOG STUDIO
 // ═══════════════════════════════════════════════════════════════════════════════
 
