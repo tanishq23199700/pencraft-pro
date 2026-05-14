@@ -393,21 +393,30 @@
       <div class="panel-header">
         <div>
           <h1 class="panel-title">🕵️ Competitor Intel</h1>
-          <p class="panel-sub">Reverse-engineer competitors' SEO structures directly from the web.</p>
+          <p class="panel-sub">Full domain intelligence — competitors, keyword gaps, content opportunities, and priority action plan.</p>
         </div>
       </div>
 
       <div class="seo-ctrl-card">
         <div class="radio-row">
           <span class="ctrl-label">Analyze By:</span>
-          <label class="radio-opt"><input type="radio" name="seo-type" value="keyword" checked /> Keyword</label>
-          <label class="radio-opt"><input type="radio" name="seo-type" value="domain" /> Domain</label>
+          <label class="radio-opt">
+            <input type="radio" name="seo-type" value="keyword" checked onchange="updateSEOPlaceholder(this.value)" />
+            🔑 Keyword / Topic
+          </label>
+          <label class="radio-opt">
+            <input type="radio" name="seo-type" value="domain" onchange="updateSEOPlaceholder(this.value)" />
+            🌐 Domain (Full Report)
+          </label>
         </div>
         <div class="seo-input-row">
           <input type="text" id="seo-query" class="kw-input" placeholder="e.g. prestige apartments in whitefield" />
           <button class="btn-primary" id="btn-seo" onclick="startSEO()">🔍 Analyze</button>
           <button class="btn-ghost" id="btn-seo-stop" onclick="stopSEO()" disabled>⏹ Stop</button>
         </div>
+        <p id="seo-hint" style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+          💡 Tip: Enter a keyword to find top ranking pages, or enter a domain for a full competitor & keyword opportunity report.
+        </p>
       </div>
       
       <div id="seo-progress-row" class="seo-progress-row hidden">
@@ -418,11 +427,13 @@
       <div id="seo-output" class="seo-output">
         <div class="seo-placeholder">
           <div class="seo-placeholder-icon">🕵️</div>
-          <p>Enter a keyword to analyze top competitors.</p>
+          <p>Enter a keyword or domain above to generate a full intelligence report.</p>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">Domain reports include: competitors · keyword opportunities · content gaps · backlink insights · priority actions</p>
         </div>
       </div>
       <div class="action-row" style="padding-top:0">
         <button class="btn-ghost" onclick="copySEO()">📋 Copy Report</button>
+        <button class="btn-primary" onclick="exportSEO()" style="font-size:13px;padding:8px 16px;">⬇ Export as Text</button>
         <button class="btn-ghost" onclick="clearSEO()">🗑 Clear</button>
       </div>
     </div>
@@ -543,16 +554,16 @@
 </div>
 
 <!-- Blog History View Modal -->
-<div id="blog-history-modal" class="modal hidden">
-  <div class="modal-box" style="max-width:900px; height:85vh; display:flex; flex-direction:column; padding:0;">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:24px; border-bottom:1px solid var(--border);">
-      <h2>📝 Saved Blog Post</h2>
+<div id="blog-history-modal" class="tour-overlay hidden">
+  <div class="modal-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:24px; border-bottom:1px solid var(--border); flex-shrink:0;">
+      <h2 style="margin:0; font-size:20px;">📝 Saved Blog Post</h2>
       <div style="display:flex; gap:12px;">
         <button class="btn-primary" id="btn-copy-blog-hist" onclick="copyBlogContent()">📋 Copy Clean Text</button>
-        <button class="btn-ghost" onclick="closeHistoryModal()">Close</button>
+        <button class="btn-ghost" onclick="closeHistoryModal()">✕ Close</button>
       </div>
     </div>
-    <div id="blog-history-modal-body" class="blog-output-content" style="border:none; border-radius:0;">
+    <div id="blog-history-modal-body" class="blog-output-content" style="border:none; border-radius:0; flex:1;">
       <!-- Blog content rendered here -->
     </div>
   </div>

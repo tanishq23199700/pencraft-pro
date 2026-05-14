@@ -347,7 +347,31 @@ window.startSEO = async () => {
 
 window.stopSEO  = () => { seoAbort?.abort(); setSEOStatus('⏹ Stopped.'); document.getElementById('btn-seo').disabled = false; document.getElementById('btn-seo-stop').disabled = true; };
 window.copySEO  = () => { if (seoRawText) { navigator.clipboard.writeText(seoRawText); setSEOStatus('📋 Copied!'); }};
-window.clearSEO = () => { seoRawText = ''; document.getElementById('seo-output').innerHTML = '<div class="seo-placeholder"><div class="seo-placeholder-icon">🕵️</div><p>Enter a keyword or domain above.</p></div>'; setSEOStatus(''); document.getElementById('seo-query').value = ''; };
+window.clearSEO = () => { seoRawText = ''; document.getElementById('seo-output').innerHTML = '<div class="seo-placeholder"><div class="seo-placeholder-icon">🕵️</div><p>Enter a keyword or domain above to generate a full intelligence report.</p></div>'; setSEOStatus(''); document.getElementById('seo-query').value = ''; };
+
+window.updateSEOPlaceholder = (type) => {
+  const input = document.getElementById('seo-query');
+  const hint  = document.getElementById('seo-hint');
+  if (type === 'domain') {
+    input.placeholder = 'e.g. sobhaoneworldhoskote.co.in or prestige.co.in';
+    hint.innerHTML = '💡 <strong>Domain mode:</strong> Enter any website domain for a full intelligence report — competitors, 15 keywords it can rank for, content gaps, backlink insights & priority action plan.';
+  } else {
+    input.placeholder = 'e.g. luxury apartments in Whitefield Bangalore';
+    hint.innerHTML = '💡 <strong>Keyword mode:</strong> Enter a keyword or topic to see who\'s ranking and how to beat them.';
+  }
+};
+
+window.exportSEO = () => {
+  if (!seoRawText) { setSEOStatus('⚠ Nothing to export yet.'); return; }
+  const query = document.getElementById('seo-query').value || 'report';
+  const filename = `SEO-Report-${query.replace(/\s+/g,'-').slice(0,40)}-${new Date().toISOString().slice(0,10)}.txt`;
+  const blob = new Blob([seoRawText], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setSEOStatus('⬇ Exported!');
+};
 
 function setSEOStatus(msg) {
   document.getElementById('seo-status').textContent = msg;
@@ -737,75 +761,143 @@ function buildRewritePrompt(mode, tone, keywords) {
   const modeMap = { plagiarism: 'Remove Plagiarism', humanize: 'Humanize', both: 'Remove Plagiarism AND Humanize' };
   const label   = modeMap[mode] || 'Rewrite';
 
-  let p = `You are an expert ghostwriter. Task: [${label}]. Tone: [${tone}].
-RULES:
-1. Preserve exact meaning. Do not add or remove facts.
-2. Preserve ALL formatting (paragraphs, bullets, headings).
+  let p = `You are a professional ghostwriter and editor. Task: [${label}]. Tone: [${tone}].
+CORE RULES (non-negotiable):
+1. Preserve ALL facts, meaning and intent exactly. Do not add or remove information.
+2. Preserve formatting structure (paragraphs, bullets, headings).
 3. These keywords must appear EXACTLY as written: [${kw}]
-4. Return ONLY the rewritten text. No preamble, no explanations.`;
+4. Return ONLY the rewritten text. No preamble, no meta-commentary.`;
 
   if (mode === 'plagiarism' || mode === 'both') {
-    p += `\nPLAGIARISM REMOVAL:
-- Restructure every sentence. Change word order, clause order, sentence structure.
-- Replace all non-keyword verbs, adjectives, adverbs with synonyms.
-- No 5+ word sequence should match the original.
-- Change transitions, idioms, and paragraph openers completely.`;
+    p += `
+
+PLAGIARISM REMOVAL — STRONGEST LEVEL:
+- Every sentence must be fully restructured. Change clause order, sentence structure, and word order.
+- No sequence of 5+ consecutive words should match the original source.
+- Replace all non-keyword verbs, nouns, adjectives with precise synonyms — not generic ones.
+- Invert active/passive voice where natural.
+- Replace all transitions, connectors, and paragraph openers completely.
+- Reorder supporting points within paragraphs where logical flow allows.
+- Change all idioms and fixed phrases to fresh equivalents.`;
   }
 
   if (mode === 'humanize' || mode === 'both') {
-    p += `\nHUMANIZATION (CRITICAL — must pass AI detectors):
-- BURSTINESS: Mix very short sentences (3-7 words) with long ones (20+ words). At least 25% under 8 words.
-- PERPLEXITY: Unpredictable word choices. Use contractions (it's, don't, can't, there's).
-- Start some sentences with: And, But, So, Now, Thing is,
-- Use hedging: probably, arguably, in most cases, seems like, turns out
-- Include dashes (—) and parenthetical asides (like this one).
-- Use 1-2 sentence fragments. Like this.
-- BANNED WORDS: delve, tapestry, testament, seamlessly, vital, crucial, pivotal, furthermore, moreover, in conclusion, leverage, harness, embark, navigate, synergy, robust, intricate, myriad, plethora, landscape, transformative, revolutionize, comprehensive, holistic, multifaceted, paradigm`;
+    p += `
+
+HUMANIZATION — MAXIMUM STRENGTH (must score 0% on GPTZero, Originality.ai, Copyleaks):
+
+HARD SENTENCE RULES:
+- MAX 20 WORDS per sentence for at least 50% of all sentences. Count them.
+- Every paragraph: one short sentence (under 10 words) + one medium (10-18 words) + one longer (18-25 words). NEVER three long sentences in a row.
+- NO semicolons. Ever. Split into two sentences instead.
+- NO compound sentences joined with "which" — split them.
+- NO sentences beginning with "This", "These", "The", or "It" more than twice per section.
+- At least 5 single-sentence-only paragraphs throughout the piece.
+
+VOICE RULES:
+- Start at least 6 sentences with: And, But, So, Or, Yet, Look, Honestly, Wait, Actually
+- Use contractions in EVERY paragraph: don't, it's, you'll, can't, we're, isn't, there's, they've
+- Ask the reader a direct question at least once every 3 paragraphs. "Sound familiar?" "Get it?"
+- Use ONE em-dash (—) per section for a natural conversational aside.
+- Include at least 3 intentional sentence fragments. Like this. For impact.
+- Use hedging naturally: probably, seems like, from what I've seen, most likely, in most cases
+
+BANNED WORDS — NEVER USE:
+delve, tapestry, testament, seamlessly, vital, crucial, pivotal, furthermore, moreover, in conclusion, leverage, harness, embark, navigate, synergy, robust, intricate, myriad, plethora, landscape, transformative, revolutionize, comprehensive, holistic, multifaceted, paradigm, meticulous, it is worth noting, look no further, substantial, significant, conducive, premier, elevated, enhanced, esteemed, dedicated, foster, facilitate, encompasses, demonstrates, ultimately, notably, consequently, nevertheless, endeavor, initiatives, ensure, regarding, utilize, optimal, cutting-edge, unprecedented
+
+BANNED AI SENTENCE PATTERNS:
+- "Not only does X, but it also Y"
+- "Whether you are X or Y, this Z"
+- "With a focus on X, the Y provides Z"
+- "It is important to note that"
+- "One of the most important"
+- "plays a crucial role"
+- "is designed to"`;
   }
 
   return p;
 }
 
 function buildSecondPassPrompt() {
-  return `You are a final-pass editor. Make the text more authentically human WITHOUT changing any meaning.
-RULES: 1. Same meaning, same facts, same structure. 2. Add 2-3 more contractions. 3. Break up any uniform-length sentences. 4. Replace any remaining formal transitions with casual ones. 5. Return ONLY the edited text.`;
+  return `You are a final-pass editor making text sound authentically human. Do NOT change facts, structure, or meaning.
+RULES:
+1. Break any remaining sentences over 22 words into two shorter ones.
+2. Add 3+ more contractions wherever formal forms appear ("do not" → "don't", "it is" → "it's").
+3. Replace any remaining formal transition words (furthermore, however, consequently) with casual equivalents (also, but, so).
+4. Add one conversational question to any section that doesn't have one.
+5. Remove any semicolons — split into two sentences.
+6. Return ONLY the edited text. No commentary.`;
 }
 
 function buildSEOSystemPrompt() {
-  return `You are a senior SEO strategist. Use Google Search to research the top ranking competitors for the given query. Then produce a CONCISE, scannable SEO intelligence report.
+  return `You are a senior SEO strategist and digital intelligence analyst. Use Google Search grounding to research the given domain or keyword deeply. Produce a FULL, data-rich intelligence report with tables, keyword data, and actionable insights.
 
-STRICT RULES:
-- Use Markdown. Short bullet points only. One table.
-- Each section: MAX 4-5 bullets. No padding. No filler.
-- Total report: 400-600 words max.
-- Be specific. Use real data from your search.
+OUTPUT STRUCTURE (follow exactly, use real data from search):
 
-OUTPUT THIS EXACT STRUCTURE:
+## 🏢 Domain Overview
+- What the site does, who it targets, estimated traffic tier (high/med/low)
+- Primary niche and content angle
+- Geographic focus (local / national / global)
 
-## 📊 Competitor Snapshot
-| # | Domain | Focus | Strength |
-|---|--------|-------|----------|
+## 📊 Top 5 Competitors
+| # | Domain | Niche Focus | Est. Strength | Why They Rank |
+|---|--------|-------------|---------------|---------------|
+(5 real competing domains. Be specific.)
 
-## 🔑 Top Keywords They Target
-- (6-8 specific keywords, bold the most competitive ones)
+## 🔑 Keywords This Domain Can Rank For
+| Keyword | Intent | Difficulty | Opportunity |
+|---------|--------|------------|-------------|
+(10-15 keywords. Mix short-tail and long-tail. Include local variants.)
 
-## 📝 Content Patterns
-- (heading structures, formats, avg word count)
+## 🚀 Low-Competition Keyword Opportunities
+| Keyword | Monthly Searches (est.) | Why It's Winnable |
+|---------|------------------------|-------------------|
+(5-8 keywords where competition is weak but intent is strong)
 
-## 🕳️ Gaps & Opportunities (Top 3)
-- **Gap 1:** [topic they miss] — why it's an opportunity
-- **Gap 2:** ...
-- **Gap 3:** ...
+## 📝 Content Gap Analysis
+- Topics the domain is missing that competitors cover well
+- At least 5 specific blog/page ideas with target keywords
+- Format: **[Page Title]** → targets: [keyword]
 
-## ✅ Top 5 Action Items
-1. (most impactful first)
-2. ...
+## 🕳️ Competitor Weaknesses to Exploit
+- 3-5 specific weaknesses found in competitor content (thin coverage, no local pages, missing FAQs, etc.)
 
-No intro or outro.`;
+## 🔗 Backlink & Authority Observations
+- Types of sites linking to competitors (directories, blogs, news)
+- Quick-win link building opportunities for this niche
+
+## ✅ Priority Action Plan
+| Priority | Action | Expected Impact |
+|----------|--------|-----------------|
+1. (highest ROI first — be specific, not generic)
+2.
+3.
+4.
+5.
+
+RULES:
+- Use real data from your Google Search results — no made-up domains or keywords
+- Use Markdown tables for all structured data
+- Be specific: real domain names, real keyword phrases, real numbers where available
+- No filler sentences. Every line must add value.
+- Total report: 800-1200 words`;
 }
 
 function buildSEOUserPrompt(query, type) {
-  return `Search type: ${type}\nTarget: ${query}\n\nSearch Google for the top 5 competing pages for this target. Analyze them and produce the SEO intelligence report.`;
+  if (type === 'domain') {
+    return `Domain to analyze: ${query}
+
+Search Google for:
+1. "site:${query}" to understand their content
+2. Top competitors ranking for similar terms
+3. Keywords this domain is currently ranking for or could rank for
+4. Content gaps and opportunities in their niche
+
+Now produce the full SEO intelligence report based on your findings.`;
+  }
+  return `Keyword/Topic to analyze: ${query}
+
+Search Google for the top 5 pages ranking for "${query}" and related terms. Analyze their domains, content strategy, and keyword targeting. Produce the full SEO intelligence report.`;
 }
 
 // ─── Heuristic Scoring (offline) ──────────────────────────────────────────────
