@@ -242,8 +242,9 @@ window.runWPTool = async (tool) => {
     const name = document.getElementById('wp-el-name').value;
     const type = document.getElementById('wp-el-type').value;
     const raw = document.getElementById('wp-el-raw').value;
-    systemPrompt = "You are an elite real estate copywriter. Write highly persuasive, formatted copy specifically designed to be pasted into WordPress/Elementor text widgets. Keep it punchy, use short paragraphs, and do NOT use markdown asterisks (**) or raw HTML. Use clean paragraph breaks.";
-    userPrompt = `Project: ${name}\nSection needed: ${type}\nRaw details:\n${raw}`;
+    const wc = document.getElementById('wp-el-wordcount').value;
+    systemPrompt = "You are an elite real estate copywriter. Write highly persuasive, formatted copy specifically designed to be pasted into WordPress/Elementor text widgets. Keep it punchy, use short paragraphs, and do NOT use markdown asterisks (**) or raw HTML. Use clean paragraph breaks. Ensure the length of the copy strictly matches the Target Word Count requested by the user.";
+    userPrompt = `Project: ${name}\nSection needed: ${type}\nRaw details:\n${raw}\nTarget Word Count: ~${wc} words`;
   } else if (tool === 'yoast') {
     const kw = document.getElementById('wp-yo-kw').value;
     const raw = document.getElementById('wp-yo-raw').value;
