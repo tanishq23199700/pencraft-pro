@@ -863,6 +863,10 @@ mark.kw-hl {
   font-size: 13px; color: var(--text-secondary); font-weight: 500; flex: 1;
 }
 .bl-topic-lbl { font-weight: 700; color: var(--accent); margin-right: 4px; }
+.bl-summary-mode {
+  width: 100%; padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; margin-top: 4px;
+}
 .bl-topic-pill {
   display: inline-block; background: #fff; border: 1px solid #C7D2FE;
   color: var(--accent); font-size: 11px; font-weight: 600;

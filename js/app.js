@@ -1689,17 +1689,26 @@ window.blStartCrawl = async () => {
     if (si < steps.length) { msgEl.textContent = steps[si++]; }
   }, 1800);
 
-  badge.textContent = '● Crawling...';
+  badge.textContent = '● Analysing...';
 
   try {
-    // 1. Fetch homepage via CORS proxy
-    blSetCrawlMsg(msgEl, 'Fetching homepage...');
-    const rawHtml = await blFetchPage(siteUrl);
-    const extracted = blExtractText(rawHtml, siteUrl);
-    blState.siteContent = extracted.text;
+    // 1. Try to fetch homepage via CORS proxies (best-effort — silently skip if blocked)
+    let extracted = blEmptyExtracted(siteUrl);
+    let crawlMode = 'AI-only';
+    blSetCrawlMsg(msgEl, 'Attempting to read your site...');
+    try {
+      const rawHtml = await blFetchPage(siteUrl, msgEl);
+      extracted = blExtractText(rawHtml, siteUrl);
+      blState.siteContent = extracted.text;
+      crawlMode = 'Crawled';
+    } catch (fetchErr) {
+      // Site blocked all proxies — continue in AI-only mode
+      blSetCrawlMsg(msgEl, '⚡ Site protected — switching to AI-only mode...');
+      await new Promise(r => setTimeout(r, 800));
+    }
 
-    // 2. AI analysis + prospect generation (single prompt, returns JSON)
-    blSetCrawlMsg(msgEl, 'AI is researching your niche & finding prospects...');
+    // 2. AI prospect generation (works with or without crawled content)
+    blSetCrawlMsg(msgEl, 'AI is researching backlink opportunities...');
     const prospects = await blFindProspects(siteUrl, extracted, blState.niche);
     blState.prospects = prospects;
 
@@ -1707,7 +1716,7 @@ window.blStartCrawl = async () => {
 
     // Show summary card
     summary.classList.remove('hidden');
-    summary.innerHTML = blRenderSummary(extracted, prospects.length);
+    summary.innerHTML = blRenderSummary(extracted, prospects.length, crawlMode);
 
     badge.textContent = `● ${prospects.length} prospects found`;
     prog.classList.add('hidden');
@@ -1730,14 +1739,50 @@ function blSetCrawlMsg(el, msg) {
   if (el) el.textContent = msg;
 }
 
-// ─── CORS-proxy page fetcher ──────────────────────────────────────────────────
-async function blFetchPage(url) {
-  // Try allorigins first (free, reliable)
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const resp = await fetch(proxyUrl, { cache: 'no-cache' });
-  if (!resp.ok) throw new Error(`Could not fetch site (${resp.status}). Check the URL.`);
-  const data = await resp.json();
-  return data.contents || '';
+// ─── CORS-proxy page fetcher (multi-proxy with fallback) ─────────────────────
+async function blFetchPage(url, msgEl) {
+  const proxies = [
+    {
+      name: 'Proxy 1',
+      build: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+      extract: async r => { const d = await r.json(); return d.contents || ''; },
+    },
+    {
+      name: 'Proxy 2',
+      build: u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+      extract: async r => r.text(),
+    },
+    {
+      name: 'Proxy 3',
+      build: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      extract: async r => r.text(),
+    },
+  ];
+
+  for (const proxy of proxies) {
+    try {
+      blSetCrawlMsg(msgEl, `Reading site via ${proxy.name}...`);
+      const resp = await fetch(proxy.build(url), { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
+      if (!resp.ok) continue;
+      const content = await proxy.extract(resp);
+      if (content && content.length > 200) return content;
+    } catch { /* try next proxy */ }
+  }
+  throw new Error('All proxies failed — site has bot protection.');
+}
+
+// ─── Empty extracted object for AI-only mode ─────────────────────────────────
+function blEmptyExtracted(siteUrl) {
+  let domain = siteUrl;
+  try { domain = new URL(siteUrl).hostname; } catch {}
+  return {
+    text: `Website URL: ${siteUrl}`,
+    title: domain,
+    metaDesc: '',
+    h1s: [],
+    h2s: [],
+    links: [],
+  };
 }
 
 // ─── HTML → clean text extractor ─────────────────────────────────────────────
@@ -1859,14 +1904,20 @@ Find 8 relevant websites in the ${niche} space that would realistically link to 
 }
 
 // ─── Render helpers ───────────────────────────────────────────────────────────
-function blRenderSummary(extracted, count) {
+function blRenderSummary(extracted, count, crawlMode = 'AI-only') {
+  const modeColor  = crawlMode === 'Crawled' ? '#10B981' : '#F59E0B';
+  const modeIcon   = crawlMode === 'Crawled' ? '🕷️' : '⚡';
+  const modeLabel  = crawlMode === 'Crawled' ? 'Site Crawled' : 'AI-Only Mode';
+  const modeTip    = crawlMode === 'Crawled'
+    ? 'Homepage content was read successfully.'
+    : 'Site has bot-protection — AI used URL + niche to find prospects.';
   return `
     <div class="bl-summary-inner">
       <div class="bl-summary-stat"><span class="bl-stat-num">${count}</span><span class="bl-stat-lbl">Prospects Found</span></div>
-      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.links.length}</span><span class="bl-stat-lbl">Pages Detected</span></div>
-      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.h2s.length}</span><span class="bl-stat-lbl">Topics Mapped</span></div>
-      <div class="bl-summary-topic">
-        <span class="bl-topic-lbl">Site Title:</span> ${escHtml(extracted.title || 'N/A')}
+      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.links.length || '—'}</span><span class="bl-stat-lbl">Pages Detected</span></div>
+      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.h2s.length || '—'}</span><span class="bl-stat-lbl">Topics Mapped</span></div>
+      <div class="bl-summary-mode" style="background:${modeColor}15;border:1px solid ${modeColor}30;color:${modeColor};">
+        ${modeIcon} <strong>${modeLabel}</strong> — ${modeTip}
       </div>
       ${extracted.h2s.slice(0,4).map(h => `<span class="bl-topic-pill">${escHtml(h)}</span>`).join('')}
     </div>
