@@ -75,22 +75,22 @@
     <div class="sb-label">MAIN MENU</div>
     <nav class="sb-nav">
       <button class="sb-btn active" data-panel="rewriter" onclick="switchPanel('rewriter')">
-        <span class="sb-icon">✍</span> Content Rewriter
+        Content Rewriter
       </button>
       <button class="sb-btn" data-panel="wp" onclick="switchPanel('wp')">
-        <span class="sb-icon">💻</span> WordPress Hub
+        WordPress Hub
       </button>
       <button class="sb-btn" data-panel="seo" onclick="switchPanel('seo')">
-        <span class="sb-icon">🕵️</span> Competitor Intel
+        Competitor Intel
       </button>
     </nav>
     <div class="sb-label" style="margin-top:24px">ACCOUNT</div>
     <nav class="sb-nav">
       <button class="sb-btn" data-panel="tutorial" onclick="switchPanel('tutorial')">
-        <span class="sb-icon">📚</span> Tutorial & Guide
+        Tutorial & Guide
       </button>
       <button class="sb-btn" data-panel="settings" onclick="switchPanel('settings')">
-        <span class="sb-icon">⚙️</span> Settings
+        Settings
       </button>
     </nav>
     
@@ -113,7 +113,7 @@
     <div id="panel-rewriter" class="panel active">
       <div class="panel-header">
         <div>
-          <h1 class="panel-title">✍ Content Rewriter</h1>
+          <h1 class="panel-title">Content Rewriter</h1>
           <p class="panel-sub">Humanize AI text and remove plagiarism with a dual-pass engine.</p>
         </div>
         <div class="panel-badge" id="provider-badge">● Auto-Fallback Enabled</div>
@@ -121,9 +121,9 @@
 
       <div class="ctrl-row">
         <div class="mode-group">
-          <button class="mode-btn" id="mode-plagiarism" onclick="setMode('plagiarism')">🔍 Plagiarism Remover</button>
-          <button class="mode-btn" id="mode-humanize" onclick="setMode('humanize')">🤖 Humanize AI</button>
-          <button class="mode-btn active" id="mode-both" onclick="setMode('both')">✨ Super Rewrite (Both)</button>
+          <button class="mode-btn" id="mode-plagiarism" onclick="setMode('plagiarism')">Plagiarism Remover</button>
+          <button class="mode-btn" id="mode-humanize" onclick="setMode('humanize')">Humanize AI</button>
+          <button class="mode-btn active" id="mode-both" onclick="setMode('both')">Super Rewrite</button>
         </div>
         <div class="tone-group">
           <select id="tone-select" class="dash-select">
@@ -199,7 +199,7 @@
     <div id="panel-wp" class="panel hidden">
       <div class="panel-header">
         <div>
-          <h1 class="panel-title">💻 WordPress Tools</h1>
+          <h1 class="panel-title">WordPress Tools</h1>
           <p class="panel-sub">Content generation built specifically for Elementor, Yoast, and Real Estate sites.</p>
         </div>
       </div>
@@ -207,13 +207,13 @@
       <div class="wp-grid">
         <!-- WP Tool selection -->
         <div class="wp-sidebar">
-          <button class="wp-tab active" onclick="setWPTool('elementor')">🏗️ Elementor Filler</button>
-          <button class="wp-tab" onclick="setWPTool('yoast')">📝 Yoast Meta Gen</button>
-          <button class="wp-tab" onclick="setWPTool('neighborhood')">🏡 Neighborhood Guide</button>
+          <button class="wp-tab active" onclick="setWPTool('elementor')">Elementor Filler</button>
+          <button class="wp-tab" onclick="setWPTool('yoast')">Yoast Meta Gen</button>
+          <button class="wp-tab" onclick="setWPTool('neighborhood')">Neighborhood Guide</button>
           <div class="wp-sidebar-divider"></div>
-          <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">✍ Blog Studio <span class="tab-badge">NEW</span></button>
-          <button class="wp-tab" onclick="setWPTool('history'); loadBlogHistory();">📚 Saved Blogs</button>
-          <button class="wp-tab" onclick="setWPTool('quickblog')" style="background:linear-gradient(135deg,#6C3FC5,#9B5DE5);color:#fff;font-weight:700;">⚡ Quick Generate</button>
+          <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">Blog Studio</button>
+          <button class="wp-tab" onclick="setWPTool('history'); loadBlogHistory();">Saved Blogs</button>
+          <button class="wp-tab" onclick="setWPTool('quickblog')">Quick Generate</button>
         </div>
 
         <div class="wp-main">
@@ -382,10 +382,10 @@
           <div id="wp-tool-history" class="wp-tool-panel hidden" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
             <div class="blog-phase-hdr" style="padding: 24px; margin: 0; flex-shrink: 0;">
               <div>
-                <h3>📚 Saved Blogs</h3>
+                <h3>Saved Blogs</h3>
                 <p class="muted">View and copy blogs you've previously generated.</p>
               </div>
-              <button class="btn-ghost" onclick="loadBlogHistory()">🔄 Refresh</button>
+              <button class="btn-ghost" onclick="loadBlogHistory()">Refresh</button>
             </div>
             <div id="blog-history-list" class="blog-titles-list" style="padding: 0 24px 24px;">
               <!-- History cards injected here -->
@@ -396,12 +396,12 @@
           <div id="wp-tool-quickblog" class="wp-tool-panel hidden blog-studio-tool" style="overflow-y:auto;">
             <div class="blog-studio-header" style="padding:24px 24px 0;">
               <div>
-                <h3>⚡ Quick Blog Generator</h3>
+                <h3>Quick Blog Generator</h3>
                 <p class="muted">Enter your topic and keywords — get a fully humanized, SEO-optimized 1500+ word blog instantly. No title selection needed.</p>
               </div>
               <div class="blog-studio-badges">
-                <span class="bs-badge">🤖 AI-Undetectable</span>
-                <span class="bs-badge">🔍 SEO-Optimised</span>
+                <span class="bs-badge">AI-Undetectable</span>
+                <span class="bs-badge">SEO-Optimised</span>
               </div>
             </div>
 
@@ -438,7 +438,7 @@
               </div>
 
               <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="generateQuickBlog()" id="btn-qb-generate">
-                ⚡ Generate Blog Now →
+                Generate Blog Now →
               </button>
             </div>
 
@@ -458,8 +458,8 @@
 
           <div class="wp-output-area" id="wp-output-area">
             <div class="editor-header">
-              <span>✅ Generated WP Ready Content</span>
-              <button class="btn-ghost" style="padding:4px 12px;font-size:12px;border:none;background:#F3F4F6;" onclick="copyWP()">📋 Clean Copy</button>
+              <span>Generated WP Ready Content</span>
+              <button class="btn-ghost" style="padding:4px 12px;font-size:12px;border:none;" onclick="copyWP()">Clean Copy</button>
             </div>
             <div id="wp-output" class="wp-output-box">
               <p style="color:var(--text-muted);text-align:center;padding:40px;">Select a tool above to generate content...</p>
@@ -473,7 +473,7 @@
     <div id="panel-seo" class="panel hidden">
       <div class="panel-header">
         <div>
-          <h1 class="panel-title">🕵️ Competitor Intel</h1>
+          <h1 class="panel-title">Competitor Intel</h1>
           <p class="panel-sub">Full domain intelligence — competitors, keyword gaps, content opportunities, and priority action plan.</p>
         </div>
       </div>
@@ -483,17 +483,17 @@
           <span class="ctrl-label">Analyze By:</span>
           <label class="radio-opt">
             <input type="radio" name="seo-type" value="keyword" checked onchange="updateSEOPlaceholder(this.value)" />
-            🔑 Keyword / Topic
+            Keyword / Topic
           </label>
           <label class="radio-opt">
             <input type="radio" name="seo-type" value="domain" onchange="updateSEOPlaceholder(this.value)" />
-            🌐 Domain (Full Report)
+            Domain (Full Report)
           </label>
         </div>
         <div class="seo-input-row">
           <input type="text" id="seo-query" class="kw-input" placeholder="e.g. prestige apartments in whitefield" />
-          <button class="btn-primary" id="btn-seo" onclick="startSEO()">🔍 Analyze</button>
-          <button class="btn-ghost" id="btn-seo-stop" onclick="stopSEO()" disabled>⏹ Stop</button>
+          <button class="btn-primary" id="btn-seo" onclick="startSEO()">Analyze</button>
+          <button class="btn-ghost" id="btn-seo-stop" onclick="stopSEO()" disabled>Stop</button>
         </div>
         <p id="seo-hint" style="font-size:12px;color:var(--text-muted);margin-top:8px;">
           💡 Tip: Enter a keyword to find top ranking pages, or enter a domain for a full competitor & keyword opportunity report.
