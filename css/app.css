@@ -157,13 +157,13 @@ body {
 .wp-tab:hover { background: #F9FAFB; color: var(--text-primary); }
 .wp-tab.active { background: #EEF2FF; color: var(--accent); border: 1px solid #C7D2FE; }
 
-.wp-main { flex: 1; display: flex; flex-direction: column; gap: 24px; }
-.wp-tool-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); }
+.wp-main { flex: 1; display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.wp-tool-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); flex-shrink: 0; }
 .wp-tool-panel h3 { font-size: 22px; margin: 0 0 8px 0; }
 .wp-tool-panel p.muted { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
 
-.wp-output-area { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-sm); }
-.wp-output-box { flex: 1; padding: 32px; overflow-y: auto; font-size: 15px; line-height: 1.7; color: var(--text-primary); background: #FAFAFA; }
+.wp-output-area { flex: 1; min-height: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-sm); }
+.wp-output-box { flex: 1; padding: 32px; overflow-y: auto; font-size: 15px; line-height: 1.7; color: var(--text-primary); background: #FAFAFA; min-height: 200px; }
 
 /* ─── SEO Intel UI ─── */
 .seo-ctrl-card { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; border: 1px solid var(--border); }
