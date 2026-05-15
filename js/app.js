@@ -1624,3 +1624,416 @@ window.viewHistoryBlog = (content, title) => {
 window.closeHistoryModal = () => {
   document.getElementById('blog-history-modal').classList.add('hidden');
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  BACKLINK LAB
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let blState = {
+  siteUrl: '',
+  niche: '',
+  siteContent: '',   // extracted text from crawl
+  prospects: [],     // array of {site, reason, contactEmail, targetPage, score}
+  activeProspect: null,
+};
+
+// ─── Step navigation ──────────────────────────────────────────────────────────
+window.blShowStep = (n) => {
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById(`bl-step${i}`);
+    if (el) el.classList.toggle('hidden', i !== n);
+  });
+};
+
+window.blReset = () => {
+  blState = { siteUrl: '', niche: '', siteContent: '', prospects: [], activeProspect: null };
+  document.getElementById('bl-site-url').value = '';
+  document.getElementById('bl-site-summary').classList.add('hidden');
+  document.getElementById('bl-crawl-progress').classList.add('hidden');
+  document.getElementById('btn-bl-crawl').disabled = false;
+  blShowStep(1);
+};
+
+// ─── Step 1: Crawl & Analyse ──────────────────────────────────────────────────
+window.blStartCrawl = async () => {
+  const rawUrl = document.getElementById('bl-site-url').value.trim();
+  if (!rawUrl) { alert('Please enter your website URL.'); return; }
+
+  let siteUrl = rawUrl;
+  if (!/^https?:\/\//i.test(siteUrl)) siteUrl = 'https://' + siteUrl;
+
+  blState.siteUrl = siteUrl;
+  blState.niche   = document.getElementById('bl-niche').value;
+
+  const btn     = document.getElementById('btn-bl-crawl');
+  const prog    = document.getElementById('bl-crawl-progress');
+  const msgEl   = document.getElementById('bl-crawl-msg');
+  const summary = document.getElementById('bl-site-summary');
+  const badge   = document.getElementById('bl-badge');
+
+  btn.disabled = true;
+  prog.classList.remove('hidden');
+  summary.classList.add('hidden');
+
+  const steps = [
+    'Fetching homepage...',
+    'Parsing page content & structure...',
+    'Extracting topics & keywords...',
+    'Asking AI to analyse your niche...',
+    'Searching for backlink opportunities...',
+    'Finding contact emails...',
+    'Ranking prospects by relevance...',
+  ];
+  let si = 0;
+  const ticker = setInterval(() => {
+    if (si < steps.length) { msgEl.textContent = steps[si++]; }
+  }, 1800);
+
+  badge.textContent = '● Crawling...';
+
+  try {
+    // 1. Fetch homepage via CORS proxy
+    blSetCrawlMsg(msgEl, 'Fetching homepage...');
+    const rawHtml = await blFetchPage(siteUrl);
+    const extracted = blExtractText(rawHtml, siteUrl);
+    blState.siteContent = extracted.text;
+
+    // 2. AI analysis + prospect generation (single prompt, returns JSON)
+    blSetCrawlMsg(msgEl, 'AI is researching your niche & finding prospects...');
+    const prospects = await blFindProspects(siteUrl, extracted, blState.niche);
+    blState.prospects = prospects;
+
+    clearInterval(ticker);
+
+    // Show summary card
+    summary.classList.remove('hidden');
+    summary.innerHTML = blRenderSummary(extracted, prospects.length);
+
+    badge.textContent = `● ${prospects.length} prospects found`;
+    prog.classList.add('hidden');
+
+    // Show prospects step
+    blRenderProspects(prospects);
+    blShowStep(2);
+
+  } catch (e) {
+    clearInterval(ticker);
+    prog.classList.add('hidden');
+    badge.textContent = '● Error';
+    summary.classList.remove('hidden');
+    summary.innerHTML = `<div class="bl-error">❌ ${e.message}</div>`;
+    btn.disabled = false;
+  }
+};
+
+function blSetCrawlMsg(el, msg) {
+  if (el) el.textContent = msg;
+}
+
+// ─── CORS-proxy page fetcher ──────────────────────────────────────────────────
+async function blFetchPage(url) {
+  // Try allorigins first (free, reliable)
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const resp = await fetch(proxyUrl, { cache: 'no-cache' });
+  if (!resp.ok) throw new Error(`Could not fetch site (${resp.status}). Check the URL.`);
+  const data = await resp.json();
+  return data.contents || '';
+}
+
+// ─── HTML → clean text extractor ─────────────────────────────────────────────
+function blExtractText(html, baseUrl) {
+  // Parse HTML using DOMParser
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Remove noise elements
+  ['script','style','nav','footer','header','aside','noscript','iframe','form'].forEach(tag => {
+    doc.querySelectorAll(tag).forEach(el => el.remove());
+  });
+
+  const title       = doc.title || '';
+  const metaDesc    = doc.querySelector('meta[name="description"]')?.content || '';
+  const h1s         = [...doc.querySelectorAll('h1')].map(h => h.textContent.trim()).filter(Boolean).slice(0, 3);
+  const h2s         = [...doc.querySelectorAll('h2')].map(h => h.textContent.trim()).filter(Boolean).slice(0, 8);
+  const bodyText    = (doc.body?.innerText || doc.body?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+
+  // Extract internal links for sitemap-style awareness
+  const links = [...doc.querySelectorAll('a[href]')]
+    .map(a => {
+      try {
+        const u = new URL(a.getAttribute('href'), baseUrl);
+        return u.hostname === new URL(baseUrl).hostname ? u.pathname : null;
+      } catch { return null; }
+    })
+    .filter(Boolean)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .slice(0, 20);
+
+  const text = [
+    `Title: ${title}`,
+    `Meta: ${metaDesc}`,
+    `H1s: ${h1s.join(' | ')}`,
+    `H2s: ${h2s.join(' | ')}`,
+    `Content snippet: ${bodyText}`,
+    `Internal pages: ${links.join(', ')}`,
+  ].join('\n');
+
+  return { text, title, metaDesc, h1s, h2s, links };
+}
+
+// ─── AI-powered prospect finder ───────────────────────────────────────────────
+async function blFindProspects(siteUrl, extracted, niche) {
+  const sys = `You are a world-class link-building strategist and outreach expert. Analyse the provided website content and find 8 high-quality backlink opportunities.
+
+For each prospect, you MUST find or plausibly infer a contact email. Use common patterns like:
+- editor@domain.com, contact@domain.com, hello@domain.com, info@domain.com, contribute@domain.com
+- Or based on the site's contact page pattern
+
+Return a JSON array with EXACTLY 8 objects. Each object must have these exact keys:
+{
+  "site": "Website name (not URL)",
+  "domain": "example.com",
+  "contactEmail": "real-looking@domain.com",
+  "reason": "One sentence: why this site would link to the analysed site",
+  "targetPage": "Specific page/article on their site where a link would fit naturally",
+  "score": 85,
+  "type": "Guest Post | Resource Page | Directory | Blog Mention | Broken Link | Partnership"
+}
+
+RULES:
+- Return ONLY valid JSON. No markdown fences, no explanations, no extra text.
+- Scores must be between 60-99 (integer)
+- Domains must be real, plausible websites in the ${niche} niche
+- Contact emails must follow standard patterns (info@, editor@, hello@, contact@, contribute@)
+- Types must be one of: Guest Post, Resource Page, Directory, Blog Mention, Broken Link, Partnership`;
+
+  const usr = `Analyse this website and find 8 backlink opportunities:
+
+Website URL: ${siteUrl}
+Niche: ${niche}
+
+Website Content:
+${extracted.text}
+
+Find 8 relevant websites in the ${niche} space that would realistically link to ${siteUrl}. Return JSON only.`;
+
+  let raw = '';
+  await aiGenerateWithFallback(
+    sys, usr,
+    chunk => { raw += chunk; },
+    new AbortController().signal,
+    0.7
+  );
+
+  // Parse JSON — handle possible markdown fences
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\n?([\s\S]+?)\n?```/);
+  if (fenceMatch) jsonStr = fenceMatch[1];
+  // Find first [ and last ]
+  const start = jsonStr.indexOf('[');
+  const end   = jsonStr.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error('AI returned invalid format. Please try again.');
+  jsonStr = jsonStr.slice(start, end + 1);
+
+  let prospects;
+  try {
+    prospects = JSON.parse(jsonStr);
+  } catch {
+    throw new Error('Could not parse AI response. Please try again.');
+  }
+
+  // Validate & normalise
+  return prospects
+    .filter(p => p && p.site && p.domain && p.contactEmail)
+    .map(p => ({
+      site:         p.site         || 'Unknown Site',
+      domain:       p.domain       || '',
+      contactEmail: p.contactEmail || `contact@${p.domain}`,
+      reason:       p.reason       || 'High relevance to your niche',
+      targetPage:   p.targetPage   || 'Homepage / Resources page',
+      score:        parseInt(p.score) || 75,
+      type:         p.type         || 'Guest Post',
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+}
+
+// ─── Render helpers ───────────────────────────────────────────────────────────
+function blRenderSummary(extracted, count) {
+  return `
+    <div class="bl-summary-inner">
+      <div class="bl-summary-stat"><span class="bl-stat-num">${count}</span><span class="bl-stat-lbl">Prospects Found</span></div>
+      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.links.length}</span><span class="bl-stat-lbl">Pages Detected</span></div>
+      <div class="bl-summary-stat"><span class="bl-stat-num">${extracted.h2s.length}</span><span class="bl-stat-lbl">Topics Mapped</span></div>
+      <div class="bl-summary-topic">
+        <span class="bl-topic-lbl">Site Title:</span> ${escHtml(extracted.title || 'N/A')}
+      </div>
+      ${extracted.h2s.slice(0,4).map(h => `<span class="bl-topic-pill">${escHtml(h)}</span>`).join('')}
+    </div>
+  `;
+}
+
+function blRenderProspects(prospects) {
+  const grid = document.getElementById('bl-prospects-grid');
+  const typeColors = {
+    'Guest Post':     '#7C3AED',
+    'Resource Page':  '#0891B2',
+    'Directory':      '#059669',
+    'Blog Mention':   '#D97706',
+    'Broken Link':    '#DC2626',
+    'Partnership':    '#6366F1',
+  };
+
+  grid.innerHTML = prospects.map((p, i) => {
+    const color = typeColors[p.type] || '#6366F1';
+    const scoreColor = p.score >= 80 ? '#10B981' : p.score >= 70 ? '#F59E0B' : '#6B7280';
+    return `
+      <div class="bl-prospect-card" id="blp-${i}" onclick="blSelectProspect(${i})">
+        <div class="bl-pc-top">
+          <div class="bl-pc-left">
+            <div class="bl-pc-favicon">
+              <img src="https://www.google.com/s2/favicons?domain=${escHtml(p.domain)}&sz=32" 
+                   onerror="this.style.display='none'" alt="" />
+            </div>
+            <div>
+              <div class="bl-pc-name">${escHtml(p.site)}</div>
+              <div class="bl-pc-domain">${escHtml(p.domain)}</div>
+            </div>
+          </div>
+          <div class="bl-pc-right">
+            <div class="bl-pc-score" style="color:${scoreColor}">${p.score}</div>
+            <div class="bl-pc-score-lbl">score</div>
+          </div>
+        </div>
+        <div class="bl-pc-reason">${escHtml(p.reason)}</div>
+        <div class="bl-pc-footer">
+          <span class="bl-type-badge" style="background:${color}15;color:${color};border-color:${color}30">${escHtml(p.type)}</span>
+          <span class="bl-pc-email">\uD83D\uDCE7 ${escHtml(p.contactEmail)}</span>
+        </div>
+        <div class="bl-pc-cta">Generate Outreach Email →</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Step 2 → 3: Select prospect & generate email ────────────────────────────
+window.blSelectProspect = async (idx) => {
+  blState.activeProspect = blState.prospects[idx];
+  blShowStep(3);
+  blPopulateProspectMeta();
+  await blGenerateEmail();
+};
+
+function blPopulateProspectMeta() {
+  const p = blState.activeProspect;
+  if (!p) return;
+  document.getElementById('bl-meta-site').textContent       = `${p.site} (${p.domain})`;
+  document.getElementById('bl-meta-email').textContent      = p.contactEmail;
+  document.getElementById('bl-meta-reason').textContent     = p.reason;
+  document.getElementById('bl-meta-page').textContent       = p.targetPage;
+  document.getElementById('bl-override-email').value        = '';
+  document.getElementById('bl-email-subject').value         = '';
+  document.getElementById('bl-email-body').value            = '';
+  document.getElementById('bl-email-status').textContent    = '';
+}
+
+async function blGenerateEmail() {
+  const p      = blState.activeProspect;
+  const site   = new URL(blState.siteUrl).hostname;
+  const btn    = document.getElementById('btn-bl-regen');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating...';
+  document.getElementById('bl-email-status').textContent = '✍ Writing personalised email...';
+
+  const sys = `You are a senior outreach specialist. Write a polite, concise, highly personalised link-building outreach email.
+
+RULES (mandatory):
+- Tone: professional but warm — like one colleague writing to another, NOT a sales pitch
+- Length: 3 short paragraphs + a PS line (max 180 words total body)
+- Open with a specific compliment about THEIR site/content (not generic praise)
+- Explain the value exchange clearly — what you offer them (quality content, mutual audience)
+- One clear, low-pressure ask
+- Sign off naturally
+- NO emojis in the email body
+- NO subject line prefixes like "Subject:" — just the subject text
+- Return EXACTLY in this format (no extra text):
+
+SUBJECT: [subject line here]
+
+BODY:
+[email body here]`;
+
+  const usr = `Write a backlink outreach email from ${site} to ${p.site} (${p.domain}).
+
+Our site: ${blState.siteUrl}
+Our niche: ${blState.niche}
+Their site: ${p.site} — ${p.domain}
+Target page on their site: ${p.targetPage}
+Reason this link fits: ${p.reason}
+Email type: ${p.type}`;
+
+  let raw = '';
+  try {
+    await aiGenerateWithFallback(
+      sys, usr,
+      chunk => {
+        raw += chunk;
+        // Stream subject as it comes in
+        const subMatch = raw.match(/SUBJECT:\s*(.+)/);
+        if (subMatch) document.getElementById('bl-email-subject').value = subMatch[1].trim();
+      },
+      new AbortController().signal,
+      0.8
+    );
+
+    // Parse subject & body
+    const subMatch  = raw.match(/SUBJECT:\s*(.+?)(?:\n|$)/);
+    const bodyMatch = raw.match(/BODY:\s*([\s\S]+)/);
+    const subject   = subMatch  ? subMatch[1].trim()  : `Collaboration idea — ${p.site} × ${site}`;
+    const body      = bodyMatch ? bodyMatch[1].trim()  : raw.replace(/SUBJECT:.+\n?BODY:\n?/s, '').trim();
+
+    document.getElementById('bl-email-subject').value = subject;
+    document.getElementById('bl-email-body').value    = body;
+    document.getElementById('bl-email-status').textContent = '✅ Email ready — edit if needed, then send!';
+  } catch (e) {
+    document.getElementById('bl-email-status').textContent = `❌ ${e.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Regenerate';
+  }
+}
+
+window.blRegenerateEmail = () => blGenerateEmail();
+
+// ─── Email actions ────────────────────────────────────────────────────────────
+window.blCopyEmail = () => {
+  const subj = document.getElementById('bl-email-subject').value;
+  const body = document.getElementById('bl-email-body').value;
+  const full = `Subject: ${subj}\n\n${body}`;
+  navigator.clipboard.writeText(full);
+  const btn = document.getElementById('bl-email-status');
+  btn.textContent = '📋 Copied to clipboard!';
+  setTimeout(() => { btn.textContent = '✅ Email ready — edit if needed, then send!'; }, 2000);
+};
+
+window.blOpenGmail = () => {
+  const p       = blState.activeProspect;
+  const overrideEmail = document.getElementById('bl-override-email').value.trim();
+  const toEmail = overrideEmail || (p ? p.contactEmail : '');
+  const subject = document.getElementById('bl-email-subject').value.trim();
+  const body    = document.getElementById('bl-email-body').value.trim();
+
+  if (!toEmail)  { alert('Please enter a recipient email address.'); return; }
+  if (!subject)  { alert('Subject line is empty — please generate or write an email first.'); return; }
+  if (!body)     { alert('Email body is empty — please generate or write an email first.'); return; }
+
+  // Gmail compose URL — pre-fills To, Subject, Body
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1`
+    + `&to=${encodeURIComponent(toEmail)}`
+    + `&su=${encodeURIComponent(subject)}`
+    + `&body=${encodeURIComponent(body)}`;
+
+  window.open(gmailUrl, '_blank');
+  document.getElementById('bl-email-status').textContent = '📬 Gmail opened — just hit Send!';
+};

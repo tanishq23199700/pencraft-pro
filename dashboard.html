@@ -83,6 +83,9 @@
       <button class="sb-btn" data-panel="seo" onclick="switchPanel('seo')">
         <span class="sb-icon">🕵️</span> Competitor Intel
       </button>
+      <button class="sb-btn" data-panel="backlinks" onclick="switchPanel('backlinks')">
+        <span class="sb-icon">🔗</span> Backlink Lab <span class="sb-new-badge">NEW</span>
+      </button>
     </nav>
     <div class="sb-label" style="margin-top:24px">ACCOUNT</div>
     <nav class="sb-nav">
@@ -516,6 +519,118 @@
         <button class="btn-ghost" onclick="copySEO()">📋 Copy Report</button>
         <button class="btn-primary" onclick="exportSEO()" style="font-size:13px;padding:8px 16px;">⬇ Export as Text</button>
         <button class="btn-ghost" onclick="clearSEO()">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- ══ BACKLINK LAB PANEL ═══════════════════════════════════ -->
+    <div id="panel-backlinks" class="panel hidden">
+      <div class="panel-header">
+        <div>
+          <h1 class="panel-title">🔗 Backlink Lab</h1>
+          <p class="panel-sub">Crawl your site · Find link prospects · Auto-find emails · Send outreach in one click.</p>
+        </div>
+        <div class="panel-badge" id="bl-badge">● Ready</div>
+      </div>
+
+      <!-- ── Step 1: Site Crawler ── -->
+      <div class="bl-step-card" id="bl-step1">
+        <div class="bl-step-header">
+          <div class="bl-step-num">1</div>
+          <div>
+            <h3>Crawl Your Website</h3>
+            <p class="muted">Enter your site URL. We'll extract your pages, understand your niche, and find the best backlink targets.</p>
+          </div>
+        </div>
+        <div class="bl-input-row">
+          <input type="url" id="bl-site-url" class="dash-input" placeholder="https://yourwebsite.com" />
+          <select id="bl-niche" class="dash-select bl-niche-sel">
+            <option>Real Estate</option>
+            <option>Technology / SaaS</option>
+            <option>Finance / Investment</option>
+            <option>Health & Wellness</option>
+            <option>E-commerce / Retail</option>
+            <option>Travel & Hospitality</option>
+            <option>Education</option>
+            <option>Legal / Law</option>
+            <option>General / Other</option>
+          </select>
+          <button class="btn-primary" id="btn-bl-crawl" onclick="blStartCrawl()">🕷️ Crawl & Analyse →</button>
+        </div>
+        <div id="bl-crawl-progress" class="bl-crawl-progress hidden">
+          <div class="blog-gen-spinner"></div>
+          <span id="bl-crawl-msg" class="bl-crawl-msg">Initialising...</span>
+        </div>
+        <div id="bl-site-summary" class="bl-site-summary hidden"></div>
+      </div>
+
+      <!-- ── Step 2: Backlink Opportunities ── -->
+      <div class="bl-step-card hidden" id="bl-step2">
+        <div class="bl-step-header">
+          <div class="bl-step-num">2</div>
+          <div>
+            <h3>Backlink Prospects Found</h3>
+            <p class="muted">AI-ranked opportunities. Click any card to generate a personalised outreach email.</p>
+          </div>
+          <button class="btn-ghost btn-sm" onclick="blReset()">↺ Start Over</button>
+        </div>
+        <div id="bl-prospects-grid" class="bl-prospects-grid"></div>
+      </div>
+
+      <!-- ── Step 3: Email Composer ── -->
+      <div class="bl-step-card hidden" id="bl-step3">
+        <div class="bl-step-header">
+          <div class="bl-step-num">3</div>
+          <div>
+            <h3>Outreach Email Composer</h3>
+            <p class="muted">AI-crafted professional email. Edit freely before sending.</p>
+          </div>
+          <button class="btn-ghost btn-sm" onclick="blShowStep(2)">← Back</button>
+        </div>
+
+        <div class="bl-email-grid">
+          <!-- Left: Prospect Info -->
+          <div class="bl-email-meta">
+            <div class="bl-meta-card">
+              <div class="bl-meta-label">🌐 Target Site</div>
+              <div id="bl-meta-site" class="bl-meta-val">—</div>
+            </div>
+            <div class="bl-meta-card">
+              <div class="bl-meta-label">📧 Contact Email</div>
+              <div id="bl-meta-email" class="bl-meta-val bl-meta-email">—</div>
+              <input type="text" id="bl-override-email" class="dash-input" placeholder="Or type email manually..." style="margin-top:8px;font-size:12px;padding:8px 12px;" />
+            </div>
+            <div class="bl-meta-card">
+              <div class="bl-meta-label">💡 Why This Link?</div>
+              <div id="bl-meta-reason" class="bl-meta-val" style="font-size:13px;">—</div>
+            </div>
+            <div class="bl-meta-card">
+              <div class="bl-meta-label">📄 Best Page to Target</div>
+              <div id="bl-meta-page" class="bl-meta-val" style="font-size:13px;">—</div>
+            </div>
+          </div>
+
+          <!-- Right: Email Editor -->
+          <div class="bl-email-editor">
+            <div class="bl-email-fields">
+              <div class="form-group">
+                <label>Subject Line</label>
+                <input type="text" id="bl-email-subject" class="dash-input" />
+              </div>
+              <div class="form-group" style="flex:1;display:flex;flex-direction:column;">
+                <label>Email Body</label>
+                <textarea id="bl-email-body" class="dash-input bl-email-body" placeholder="Generating email..."></textarea>
+              </div>
+            </div>
+            <div class="bl-email-actions">
+              <button class="btn-ghost" id="btn-bl-regen" onclick="blRegenerateEmail()">🔄 Regenerate</button>
+              <button class="btn-ghost" onclick="blCopyEmail()">📋 Copy Email</button>
+              <div class="bl-email-send-group">
+                <button class="btn-primary bl-gmail-btn" onclick="blOpenGmail()">📬 Open Gmail →</button>
+              </div>
+            </div>
+            <div id="bl-email-status" class="bl-email-status"></div>
+          </div>
+        </div>
       </div>
     </div>
 
