@@ -1841,13 +1841,13 @@ Return a JSON array with EXACTLY 8 objects. Each object must have these exact ke
   "contactEmail": "real-looking@domain.com",
   "reason": "One sentence: why this site would link to the analysed site",
   "targetPage": "Specific page/article on their site where a link would fit naturally",
-  "score": 85,
+  "domainAuthority": 58,
   "type": "Guest Post | Resource Page | Directory | Blog Mention | Broken Link | Partnership"
 }
 
 RULES:
 - Return ONLY valid JSON. No markdown fences, no explanations, no extra text.
-- Scores must be between 60-99 (integer)
+- domainAuthority is the estimated Moz Domain Authority (0-100 integer). Use your knowledge of real sites to estimate realistic values. High-traffic national news/directories = 70-90. Established niche blogs = 40-65. Smaller niche sites = 20-45.
 - Domains must be real, plausible websites in the ${niche} niche
 - Contact emails must follow standard patterns (info@, editor@, hello@, contact@, contribute@)
 - Types must be one of: Guest Post, Resource Page, Directory, Blog Mention, Broken Link, Partnership`;
@@ -1891,15 +1891,15 @@ Find 8 relevant websites in the ${niche} space that would realistically link to 
   return prospects
     .filter(p => p && p.site && p.domain && p.contactEmail)
     .map(p => ({
-      site:         p.site         || 'Unknown Site',
-      domain:       p.domain       || '',
-      contactEmail: p.contactEmail || `contact@${p.domain}`,
-      reason:       p.reason       || 'High relevance to your niche',
-      targetPage:   p.targetPage   || 'Homepage / Resources page',
-      score:        parseInt(p.score) || 75,
-      type:         p.type         || 'Guest Post',
+      site:            p.site            || 'Unknown Site',
+      domain:          p.domain          || '',
+      contactEmail:    p.contactEmail    || `contact@${p.domain}`,
+      reason:          p.reason          || 'High relevance to your niche',
+      targetPage:      p.targetPage      || 'Homepage / Resources page',
+      domainAuthority: parseInt(p.domainAuthority) || parseInt(p.score) || 40,
+      type:            p.type            || 'Guest Post',
     }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.domainAuthority - a.domainAuthority)
     .slice(0, 8);
 }
 
@@ -1937,7 +1937,9 @@ function blRenderProspects(prospects) {
 
   grid.innerHTML = prospects.map((p, i) => {
     const color = typeColors[p.type] || '#6366F1';
-    const scoreColor = p.score >= 80 ? '#10B981' : p.score >= 70 ? '#F59E0B' : '#6B7280';
+    const da = p.domainAuthority || 0;
+    const daColor = da >= 50 ? '#10B981' : da >= 30 ? '#F59E0B' : '#9CA3AF';
+    const daRing  = da >= 50 ? 'rgba(16,185,129,0.15)' : da >= 30 ? 'rgba(245,158,11,0.15)' : 'rgba(156,163,175,0.15)';
     return `
       <div class="bl-prospect-card" id="blp-${i}" onclick="blSelectProspect(${i})">
         <div class="bl-pc-top">
@@ -1952,14 +1954,16 @@ function blRenderProspects(prospects) {
             </div>
           </div>
           <div class="bl-pc-right">
-            <div class="bl-pc-score" style="color:${scoreColor}">${p.score}</div>
-            <div class="bl-pc-score-lbl">score</div>
+            <div class="bl-da-ring" style="border-color:${daColor};background:${daRing}">
+              <span class="bl-da-num" style="color:${daColor}">${da}</span>
+              <span class="bl-da-lbl">DA</span>
+            </div>
           </div>
         </div>
         <div class="bl-pc-reason">${escHtml(p.reason)}</div>
         <div class="bl-pc-footer">
           <span class="bl-type-badge" style="background:${color}15;color:${color};border-color:${color}30">${escHtml(p.type)}</span>
-          <span class="bl-pc-email">\uD83D\uDCE7 ${escHtml(p.contactEmail)}</span>
+          <span class="bl-pc-email">📧 ${escHtml(p.contactEmail)}</span>
         </div>
         <div class="bl-pc-cta">Generate Outreach Email →</div>
       </div>
