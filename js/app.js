@@ -255,6 +255,13 @@ window.runWPTool = async (tool) => {
     const focus = document.getElementById('wp-nb-focus').value;
     systemPrompt = "You are a local real estate expert. Write a comprehensive neighborhood guide blog post. Format it cleanly without markdown asterisks so it can be pasted into Gutenberg. Use numbered lists and clear headings.";
     userPrompt = `Location: ${loc}\nFocus: ${focus}\nWrite a detailed neighborhood guide based on real local data.`;
+  } else if (tool === 'landingpage') {
+    const name = document.getElementById('wp-lp-name').value;
+    const kw = document.getElementById('wp-lp-kw').value;
+    const raw = document.getElementById('wp-lp-raw').value;
+    const wc = document.getElementById('wp-lp-wordcount').value;
+    systemPrompt = "You are an elite SEO copywriter and web content architect. Generate a complete landing page copy, section by section. The more words requested, the more comprehensive and detailed sections you should include (e.g., Hero, About, Amenities, Location, Pricing, Floor Plans, Builder Profile, FAQs, CTA). Ensure the length strictly matches the Target Word Count requested by the user. Write persuasive, high-converting content. Use clean formatting and clear headings. Do NOT use markdown asterisks (**) for bolding, to ensure clean pasting into WordPress.";
+    userPrompt = `Project Name: ${name}\nTarget Keyword: ${kw}\nRaw Details:\n${raw}\nTarget Word Count: ~${wc} words`;
   }
   
   try {
@@ -266,7 +273,7 @@ window.runWPTool = async (tool) => {
         streamEl.textContent = wpRawText;
         streamEl.scrollTop = streamEl.scrollHeight;
       },
-      abort.signal, 0.7, tool === 'neighborhood'
+      abort.signal, 0.7, tool === 'neighborhood' || tool === 'landingpage'
     );
     // Use dedicated Yoast renderer for structured output, markdown for everything else
     if (tool === 'yoast') {
@@ -1669,106 +1676,83 @@ window.blStartCrawl = async () => {
   const prog    = document.getElementById('bl-crawl-progress');
   const msgEl   = document.getElementById('bl-crawl-msg');
   const summary = document.getElementById('bl-site-summary');
-  const badge   = document.getElementById('bl-badge');
+  const badge   = document.getElement// ─── AI-powered prospect finder ─────────────────────────────────────────────
+async function blFindProspects(siteUrl, extracted, niche) {
+  const sys = `You are a world-class link-building strategist specialising in blog outreach and guest posting. Find 20 high-quality backlink opportunities for the given website.
 
-  btn.disabled = true;
-  prog.classList.remove('hidden');
-  summary.classList.add('hidden');
+CRITICAL PRIORITY: At least 14 of the 20 MUST be blogs, content sites, or platforms that publish guest articles, accept contributor posts, or have a "Write For Us" page. These are the highest-value targets because you can get a live link by publishing original content on their site.
 
-  const steps = [
-    'Fetching homepage...',
-    'Parsing page content & structure...',
-    'Extracting topics & keywords...',
-    'Asking AI to analyse your niche...',
-    'Searching for backlink opportunities...',
-    'Finding contact emails...',
-    'Ranking prospects by relevance...',
-  ];
-  let si = 0;
-  const ticker = setInterval(() => {
-    if (si < steps.length) { msgEl.textContent = steps[si++]; }
-  }, 1800);
+For each prospect, infer a realistic contact email using standard patterns:
+- contribute@, guestpost@, editor@, hello@, info@, contact@, write@
 
-  badge.textContent = '● Analysing...';
-
-  try {
-    // 1. Try to fetch homepage via CORS proxies (best-effort — silently skip if blocked)
-    let extracted = blEmptyExtracted(siteUrl);
-    let crawlMode = 'AI-only';
-    blSetCrawlMsg(msgEl, 'Attempting to read your site...');
-    try {
-      const rawHtml = await blFetchPage(siteUrl, msgEl);
-      extracted = blExtractText(rawHtml, siteUrl);
-      blState.siteContent = extracted.text;
-      crawlMode = 'Crawled';
-    } catch (fetchErr) {
-      // Site blocked all proxies — continue in AI-only mode
-      blSetCrawlMsg(msgEl, '⚡ Site protected — switching to AI-only mode...');
-      await new Promise(r => setTimeout(r, 800));
-    }
-
-    // 2. AI prospect generation (works with or without crawled content)
-    blSetCrawlMsg(msgEl, 'AI is researching backlink opportunities...');
-    const prospects = await blFindProspects(siteUrl, extracted, blState.niche);
-    blState.prospects = prospects;
-
-    clearInterval(ticker);
-
-    // Show summary card
-    summary.classList.remove('hidden');
-    summary.innerHTML = blRenderSummary(extracted, prospects.length, crawlMode);
-
-    badge.textContent = `● ${prospects.length} prospects found`;
-    prog.classList.add('hidden');
-
-    // Show prospects step
-    blRenderProspects(prospects);
-    blShowStep(2);
-
-  } catch (e) {
-    clearInterval(ticker);
-    prog.classList.add('hidden');
-    badge.textContent = '● Error';
-    summary.classList.remove('hidden');
-    summary.innerHTML = `<div class="bl-error">❌ ${e.message}</div>`;
-    btn.disabled = false;
-  }
-};
-
-function blSetCrawlMsg(el, msg) {
-  if (el) el.textContent = msg;
+Return a JSON array with EXACTLY 20 objects. Each must have:
+{
+  "site": "Website name",
+  "domain": "example.com",
+  "contactEmail": "email@domain.com",
+  "reason": "One sentence: why their audience would value a link to the analysed site",
+  "targetPage": "Their specific page/section where a guest post or mention fits",
+  "domainAuthority": 58,
+  "type": "Write For Us | Guest Post | Blog Mention | Resource Page | Directory | Partnership",
+  "blogFriendly": true
 }
 
-// ─── CORS-proxy page fetcher (multi-proxy with fallback) ─────────────────────
-async function blFetchPage(url, msgEl) {
-  const proxies = [
-    {
-      name: 'Proxy 1',
-      build: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-      extract: async r => { const d = await r.json(); return d.contents || ''; },
-    },
-    {
-      name: 'Proxy 2',
-      build: u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-      extract: async r => r.text(),
-    },
-    {
-      name: 'Proxy 3',
-      build: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-      extract: async r => r.text(),
-    },
-  ];
+RULES:
+- Return ONLY valid JSON array. No markdown fences, no extra text.
+- domainAuthority: estimate Moz DA realistically. Major news/directories = 70-90. Established niche blogs = 40-65. Smaller niche sites = 20-45.
+- Domains must be real, active websites in the ${niche} niche
+- blogFriendly = true means they publish guest posts or external blog contributions
+- Types: Write For Us, Guest Post, Blog Mention, Resource Page, Directory, Partnership`;
 
-  for (const proxy of proxies) {
-    try {
-      blSetCrawlMsg(msgEl, `Reading site via ${proxy.name}...`);
-      const resp = await fetch(proxy.build(url), { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
-      if (!resp.ok) continue;
-      const content = await proxy.extract(resp);
-      if (content && content.length > 200) return content;
-    } catch { /* try next proxy */ }
+  const usr = `Find 20 backlink opportunities for this website:
+
+Website URL: ${siteUrl}
+Niche: ${niche}
+
+Site Content:
+${extracted.text}
+
+Focus heavily on blogs, content sites, and platforms in the ${niche} space that accept guest posts or feature external contributors. Return JSON only.`;
+
+  let raw = '';
+  await aiGenerateWithFallback(
+    sys, usr,
+    chunk => { raw += chunk; },
+    new AbortController().signal,
+    0.7
+  );
+
+  // Parse JSON — handle possible markdown fences
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\n?([\s\S]+?)\n?```/);
+  if (fenceMatch) jsonStr = fenceMatch[1];
+  const start = jsonStr.indexOf('[');
+  const end   = jsonStr.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error('AI returned invalid format. Please try again.');
+  jsonStr = jsonStr.slice(start, end + 1);
+
+  let prospects;
+  try {
+    prospects = JSON.parse(jsonStr);
+  } catch {
+    throw new Error('Could not parse AI response. Please try again.');
   }
-  throw new Error('All proxies failed — site has bot protection.');
+
+  // Validate & normalise
+  return prospects
+    .filter(p => p && p.site && p.domain && p.contactEmail)
+    .map(p => ({
+      site:            p.site            || 'Unknown Site',
+      domain:          p.domain          || '',
+      contactEmail:    p.contactEmail    || `contact@${p.domain}`,
+      reason:          p.reason          || 'Relevant to your niche',
+      targetPage:      p.targetPage      || 'Blog / Resources page',
+      domainAuthority: parseInt(p.domainAuthority) || parseInt(p.score) || 35,
+      type:            p.type            || 'Guest Post',
+      blogFriendly:    p.blogFriendly !== false,
+    }))
+    .sort((a, b) => b.domainAuthority - a.domainAuthority)
+};
 }
 
 // ─── Empty extracted object for AI-only mode ─────────────────────────────────
@@ -1927,12 +1911,13 @@ function blRenderSummary(extracted, count, crawlMode = 'AI-only') {
 function blRenderProspects(prospects) {
   const grid = document.getElementById('bl-prospects-grid');
   const typeColors = {
-    'Guest Post':     '#7C3AED',
-    'Resource Page':  '#0891B2',
-    'Directory':      '#059669',
-    'Blog Mention':   '#D97706',
-    'Broken Link':    '#DC2626',
-    'Partnership':    '#6366F1',
+    'Write For Us':  '#7C3AED',
+    'Guest Post':    '#7C3AED',
+    'Resource Page': '#0891B2',
+    'Directory':     '#059669',
+    'Blog Mention':  '#D97706',
+    'Broken Link':   '#DC2626',
+    'Partnership':   '#6366F1',
   };
 
   grid.innerHTML = prospects.map((p, i) => {
@@ -1940,12 +1925,14 @@ function blRenderProspects(prospects) {
     const da = p.domainAuthority || 0;
     const daColor = da >= 50 ? '#10B981' : da >= 30 ? '#F59E0B' : '#9CA3AF';
     const daRing  = da >= 50 ? 'rgba(16,185,129,0.15)' : da >= 30 ? 'rgba(245,158,11,0.15)' : 'rgba(156,163,175,0.15)';
+    const blogIcon = p.blogFriendly ? '✍️' : '🔗';
+    const blogTip  = p.blogFriendly ? 'Accepts guest posts' : 'Backlink target';
     return `
-      <div class="bl-prospect-card" id="blp-${i}" onclick="blSelectProspect(${i})">
+      <div class="bl-prospect-card" id="blp-${i}">
         <div class="bl-pc-top">
           <div class="bl-pc-left">
             <div class="bl-pc-favicon">
-              <img src="https://www.google.com/s2/favicons?domain=${escHtml(p.domain)}&sz=32" 
+              <img src="https://www.google.com/s2/favicons?domain=${escHtml(p.domain)}&sz=32"
                    onerror="this.style.display='none'" alt="" />
             </div>
             <div>
@@ -1963,9 +1950,13 @@ function blRenderProspects(prospects) {
         <div class="bl-pc-reason">${escHtml(p.reason)}</div>
         <div class="bl-pc-footer">
           <span class="bl-type-badge" style="background:${color}15;color:${color};border-color:${color}30">${escHtml(p.type)}</span>
-          <span class="bl-pc-email">📧 ${escHtml(p.contactEmail)}</span>
+          <span class="bl-pc-blog-tip" title="${blogTip}">${blogIcon} ${escHtml(p.targetPage.slice(0,40))}${p.targetPage.length>40?'...':''}</span>
         </div>
-        <div class="bl-pc-cta">Generate Outreach Email →</div>
+        <div class="bl-pc-email-row">📧 ${escHtml(p.contactEmail)}</div>
+        <div class="bl-pc-dual-cta">
+          <button class="bl-cta-email" onclick="blSelectProspect(${i})">📧 Outreach Email</button>
+          <button class="bl-cta-blog" onclick="blGenerateGuestPost(${i})">✍️ Guest Post</button>
+        </div>
       </div>
     `;
   }).join('');

@@ -213,6 +213,7 @@
           <button class="wp-tab active" onclick="setWPTool('elementor')">🏗️ Elementor Filler</button>
           <button class="wp-tab" onclick="setWPTool('yoast')">📝 Yoast Meta Gen</button>
           <button class="wp-tab" onclick="setWPTool('neighborhood')">🏡 Neighborhood Guide</button>
+          <button class="wp-tab" onclick="setWPTool('landingpage')">📄 Full Page Gen</button>
           <div class="wp-sidebar-divider"></div>
           <button class="wp-tab wp-tab-blog" onclick="setWPTool('blog')">✍ Blog Studio <span class="tab-badge">NEW</span></button>
           <button class="wp-tab" onclick="setWPTool('history'); loadBlogHistory();">📚 Saved Blogs</button>
@@ -293,6 +294,33 @@
               </select>
             </div>
             <button class="btn-primary" onclick="runWPTool('neighborhood')" id="btn-wp-neighborhood">Search & Generate Guide →</button>
+          </div>
+
+          <!-- Landing Page Tool -->
+          <div id="wp-tool-landingpage" class="wp-tool-panel hidden">
+            <h3>Generate Full Landing Page Content</h3>
+            <p class="muted">Crawls the web and generates an entire page, section by section.</p>
+            <div class="form-group" style="margin-top:16px">
+              <label>Name of the Project / Topic</label>
+              <input type="text" id="wp-lp-name" class="dash-input" placeholder="e.g. Godrej Vanantara" />
+            </div>
+            <div class="form-group">
+              <label>Target Keyword</label>
+              <input type="text" id="wp-lp-kw" class="dash-input" placeholder="e.g. luxury apartments in Hoskote" />
+            </div>
+            <div class="form-group">
+              <label>Raw Data / Bullet points</label>
+              <textarea id="wp-lp-raw" class="dash-input" rows="3" placeholder="e.g. 3BHK luxury, Hoskote, starts 1.5Cr..."></textarea>
+            </div>
+            <div class="form-group">
+              <label style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span>Total Target Word Count</span>
+                <span id="wp-lp-wordcount-val" style="color:var(--primary); font-weight:600;">1000 words</span>
+              </label>
+              <input type="range" id="wp-lp-wordcount" min="300" max="3000" step="100" value="1000" style="width:100%; cursor:pointer;" oninput="document.getElementById('wp-lp-wordcount-val').textContent = this.value + ' words'" />
+              <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">More words = more sections and deeper content.</p>
+            </div>
+            <button class="btn-primary" onclick="runWPTool('landingpage')" id="btn-wp-landingpage">Search & Generate Full Page →</button>
           </div>
 
           <!-- Blog Studio Tool -->
