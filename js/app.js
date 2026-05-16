@@ -260,7 +260,24 @@ window.runWPTool = async (tool) => {
     const kw = document.getElementById('wp-lp-kw').value;
     const raw = document.getElementById('wp-lp-raw').value;
     const wc = document.getElementById('wp-lp-wordcount').value;
-    systemPrompt = "You are an elite SEO copywriter and web content architect. Generate a complete landing page copy, section by section. The more words requested, the more comprehensive and detailed sections you should include (e.g., Hero, About, Amenities, Location, Pricing, Floor Plans, Builder Profile, FAQs, CTA). Ensure the length strictly matches the Target Word Count requested by the user. Write persuasive, high-converting content. Use clean formatting and clear headings. Do NOT use markdown asterisks (**) for bolding, to ensure clean pasting into WordPress.";
+    
+    // Extract strict humanize and paraphrasing rules
+    const basePrompt = buildRewritePrompt('both', 'Professional', []);
+    const humanizeRules = basePrompt.includes('PLAGIARISM REMOVAL') ? basePrompt.substring(basePrompt.indexOf('PLAGIARISM REMOVAL')) : '';
+
+    systemPrompt = `You are an elite SEO copywriter and web content architect. Generate a complete landing page copy, section by section. 
+CRITICAL RULE 1: DO NOT repeat content. Every single section must contain unique, non-repetitive information and diverse phrasing.
+CRITICAL RULE 2: The more words requested, the more comprehensive and detailed sections you should include (e.g., Hero, About, Amenities, Location, Pricing, Floor Plans, Builder Profile, FAQs, CTA). 
+CRITICAL RULE 3: Ensure the length strictly matches the Target Word Count (~${wc} words).
+CRITICAL RULE 4: Write persuasive, high-converting content.
+
+You MUST output your response as pure HTML with beautiful, modern inline CSS to arrange it properly. Use sleek typography (sans-serif), adequate padding, distinct section backgrounds (like light grays or subtle gradients), rounded borders, and responsive grid layouts for amenities/features. Make it look like a fully designed, stunning landing page preview. Do NOT wrap your output in markdown code blocks (\`\`\`html) - just output the raw HTML directly.
+
+STRICT HUMANIZATION & PARAPHRASING RULES:
+${humanizeRules}
+
+CRITICAL: To make it look extremely authentic and human-written, make sure to make a lot of spelling mistakes, use very few commas, very few full stops, and other natural human typing errors.
+`;
     userPrompt = `Project Name: ${name}\nTarget Keyword: ${kw}\nRaw Details:\n${raw}\nTarget Word Count: ~${wc} words`;
   }
   
@@ -278,6 +295,9 @@ window.runWPTool = async (tool) => {
     // Use dedicated Yoast renderer for structured output, markdown for everything else
     if (tool === 'yoast') {
       document.getElementById('wp-output').innerHTML = renderYoast(wpRawText);
+    } else if (tool === 'landingpage') {
+      let htmlOut = wpRawText.replace(/^```(html)?\n?/gm, '').replace(/\n?```$/gm, '');
+      document.getElementById('wp-output').innerHTML = htmlOut;
     } else {
       document.getElementById('wp-output').innerHTML = renderMarkdown(wpRawText);
     }
